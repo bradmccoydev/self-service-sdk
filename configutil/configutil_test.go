@@ -38,7 +38,7 @@ func TestNewConfig(t *testing.T) {
 		expectedVal string
 	}{
 		{"No default configs", nil, false, ""},
-		{"Valid default config", validDefault, false, ""},
+		{"Valid default config", validDefault, false, "configVal"},
 		{"Default config with no key", noKeyDefault, true, ""},
 		{"Default config with empty key", emptyKeyDefault, true, ""},
 		{"Default config with no value", noValueDefault, false, ""},
@@ -50,11 +50,13 @@ func TestNewConfig(t *testing.T) {
 	for _, test := range tests {
 
 		// Run each test
-		_, err := configutil.NewConfig(test.defaults)
+		obj, err := configutil.NewConfig(test.defaults)
 		if test.expectErr {
 			assert.NotNil(err, test.name)
 		} else {
+			actualVal := obj.GetString("configKey")
 			assert.Nil(err, test.name)
+			assert.Equal(test.expectedVal, actualVal, test.name)
 		}
 	}
 }
