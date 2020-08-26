@@ -9,5 +9,5 @@ The table below lists the requirements to use the SDK.
 
 | Item | Requirement |
 | :---: | :--- |
-| 1 | Go >= 1.14 |
+| 1 | Go >= v1.14 |
 | | |
