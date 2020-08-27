@@ -34,7 +34,7 @@ func loadDefaults(config *viper.Viper, defaults []DefaultValue) error {
 	// Iterate through each k/v default value
 	for _, v := range defaults {
 		if v.ConfigKey == "" {
-			err := errors.New("Empty config key provided")
+			err := errors.New("Empty config key provided in default values")
 			return err
 		}
 		config.SetDefault(v.ConfigKey, v.ConfigValue)
@@ -115,6 +115,9 @@ func NewConfigFromEnv(defaults []DefaultValue, envVars []EnvVariable) (*viper.Vi
 	var err error = nil
 	if len(defaults) > 0 {
 		err = loadDefaults(vCfg, defaults)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Try & load the environment variables
@@ -130,9 +133,12 @@ func NewConfigFromEnv(defaults []DefaultValue, envVars []EnvVariable) (*viper.Vi
 
 		// Ok bind the environment variable
 		if key == "" {
-			vCfg.BindEnv(env)
+			err = vCfg.BindEnv(env)
 		} else {
-			vCfg.BindEnv(key, env)
+			err = vCfg.BindEnv(key, env)
+		}
+		if err != nil {
+			return nil, err
 		}
 	}
 
@@ -156,6 +162,9 @@ func NewConfigFromFile(defaults []DefaultValue, configfile ConfigFile) (*viper.V
 	var err error = nil
 	if len(defaults) > 0 {
 		err = loadDefaults(vCfg, defaults)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Try & load the config file

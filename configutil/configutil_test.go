@@ -1,6 +1,7 @@
 package configutil_test
 
 import (
+	"os"
 	"testing"
 
 	"github.com/bradmccoydev/self-service-sdk/configutil"
@@ -94,8 +95,18 @@ func TestNewConfigFile(t *testing.T) {
 	}
 }
 
+// Setup test case for NewConfigFromEnv
+func setupTestCase(t *testing.T) func(t *testing.T) {
+	t.Log("Setup for NewConfigFromEnv: creating environment variable")
+	os.Setenv("TEST_VAR_FRED", "BlahBlahBlah")
+	return func(t *testing.T) {
+		t.Log("Teardown for NewConfigFromEnv: removing environment variable")
+		os.Unsetenv("TEST_VAR_FRED")
+	}
+}
+
 // Test NewConfigFromEnv
-func NewConfigFromEnv(t *testing.T) {
+func TestNewConfigFromEnv(t *testing.T) {
 
 	// Setup test default values
 	validDefault := []configutil.DefaultValue{
@@ -123,10 +134,18 @@ func NewConfigFromEnv(t *testing.T) {
 	}}
 
 	// Setup test environment variable values
-	var emptyConfFile configutil.EnvVariable
-	validConfFile, _ := configutil.NewConfigFile("testdata", "yaml", ".")
-	missingConfFile, _ := configutil.NewConfigFile("testdata2", "yaml", ".")
-	invalidConfFileType, _ := configutil.NewConfigFile("testdata", "json", ".")
+	var emptyEnvVars []configutil.EnvVariable
+	missingEnvVar := []configutil.EnvVariable{{
+		ConfigKey: "configKey",
+	}}
+	invalidEnvVar := []configutil.EnvVariable{{
+		EnvVar:    "FrEdd1EB0y",
+		ConfigKey: "configKey",
+	}}
+	validEnvVar := []configutil.EnvVariable{{
+		EnvVar:    "TEST_VAR_FRED",
+		ConfigKey: "shell",
+	}}
 
 	// Setup test data
 	var tests = []struct {
@@ -138,23 +157,27 @@ func NewConfigFromEnv(t *testing.T) {
 		expectedVal      string
 	}{
 		{"No values", nil, nil, false, "", ""},
-		{"Default config with no key", noKeyDefault, emptyConfFile, true, "", ""},
-		{"Default config with empty key", emptyKeyDefault, emptyConfFile, true, "", ""},
-		{"Default config with no value", noValueDefault, validConfFile, false, "configKey", ""},
-		{"Default config with empty value", emptyValueDefault, validConfFile, false, "configKey", ""},
-		{"Valid default config with empty config file", validDefault, emptyConfFile, true, "", ""},
-		{"Valid default config with missing config file", validDefault, missingConfFile, true, "", ""},
-		{"Valid default config with invalid config file type", validDefault, invalidConfFileType, true, "", ""},
-		{"Valid call", validDefault, validConfFile, false, "configKey", "configVal"},
-		{"Valid call", validDefault, validConfFile, false, "metadata.labels.test", "not-default"},
+		{"Default config with no key", noKeyDefault, nil, true, "", ""},
+		{"Default config with empty key", emptyKeyDefault, nil, true, "", ""},
+		{"Default config with no value", noValueDefault, nil, false, "configKey", ""},
+		{"Default config with empty value", emptyValueDefault, nil, false, "configKey", ""},
+		{"Valid default config with no env vars", validDefault, nil, false, "configKey", "configVal"},
+		{"Valid default config with empty env vars array", validDefault, emptyEnvVars, false, "configKey", "configVal"},
+		{"Valid default config with missing env var", validDefault, missingEnvVar, true, "", ""},
+		{"Valid default config with invalid env var", validDefault, invalidEnvVar, false, "configKey", "configVal"},
+		{"Valid call", validDefault, validEnvVar, false, "shell", "BlahBlahBlah"},
 	}
+
+	// Run setup routine to configure test env var
+	teardownTestCase := setupTestCase(t)
+	defer teardownTestCase(t)
 
 	// Iterate through the test data
 	assert := assert.New(t)
 	for _, test := range tests {
 
 		// Run each test
-		obj, err := configutil.NewConfigFromFile(test.defaults, test.confFile)
+		obj, err := configutil.NewConfigFromEnv(test.defaults, test.envVars)
 		if test.expectErr {
 			assert.NotNil(err, test.name)
 		} else {
