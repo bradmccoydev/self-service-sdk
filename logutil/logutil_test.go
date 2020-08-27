@@ -38,6 +38,33 @@ func TestCreateLogConfDef(t *testing.T) {
 	}
 }
 
+// Test LogDebug
+func TestLogDebug(t *testing.T) {
+
+	// Setup test default values
+	var emptyConfig logutil.LogConfig
+	validConfig, _ := logutil.CreateLogConfDef(logutil.TimeFormatUnix, logutil.LogLevelDebug, false)
+
+	// Setup test data
+	var tests = []struct {
+		name      string
+		msg       string
+		config    logutil.LogConfig
+		expectErr bool
+	}{
+		{"Empty config", "Empty config", emptyConfig, true},
+		{"Valid config but no message", "", *validConfig, false},
+		{"Valid config with message", "Valid config with message", *validConfig, false},
+	}
+
+	// Iterate through the test data
+	for _, test := range tests {
+
+		// Run each test
+		logutil.LogDebug(test.msg, test.config)
+	}
+}
+
 // Test LogInfo
 func TestLogInfo(t *testing.T) {
 
@@ -62,7 +89,7 @@ func TestLogInfo(t *testing.T) {
 	for _, test := range tests {
 
 		// Run each test
-		logutil.LogInfo(test.name, test.config)
+		logutil.LogInfo(test.msg, test.config)
 		// obj, err := logutil.LogInfo(test.name, *test.config)
 		// if test.expectErr {
 		// 	assert.NotNil(err, test.name)

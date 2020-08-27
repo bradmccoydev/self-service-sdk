@@ -95,6 +95,17 @@ func CreateLogConfDef(timeFormat string, logLevel string, logToConsole bool) (*L
 	return &conf, err
 }
 
+// LogDebug creates a new debug level log entry
+//
+// Example:
+//
+//     // Create an empty config manager instance
+//     logutil.LogLogDebug(msg, config)
+func LogDebug(msg string, config LogConfig) {
+	setup(config)
+	log.Debug().Msg(msg)
+}
+
 // LogError creates a new error level log entry
 //
 // Example:
@@ -139,14 +150,10 @@ func setup(config LogConfig) {
 	}
 
 	// Set global log level
-	if config.TimeFieldFormat == "" {
-		zerolog.SetGlobalLevel(zerolog.InfoLevel)
-	} else {
-		zerolog.SetGlobalLevel(config.GlobalLogLevel)
-	}
+	zerolog.SetGlobalLevel(config.GlobalLogLevel)
 
 	// Set log output
-	if config.TimeFieldFormat == "" {
+	if config.LogToConsole == false {
 		log.Logger = zerolog.New(os.Stdout).With().Timestamp().Logger()
 	} else {
 		log.Logger = zerolog.New(os.Stdout).With().Timestamp().Logger()
