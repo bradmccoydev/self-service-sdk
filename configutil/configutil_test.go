@@ -8,6 +8,49 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// Setup test case for NewConfigFromEnv
+func setupTestCase(t *testing.T) func(t *testing.T) {
+	t.Log("Setup for NewConfigFromEnv: creating environment variable")
+	os.Setenv("TEST_VAR_FRED", "BlahBlahBlah")
+	return func(t *testing.T) {
+		t.Log("Teardown for NewConfigFromEnv: removing environment variable")
+		os.Unsetenv("TEST_VAR_FRED")
+	}
+}
+
+// Test CreateConfFileDef
+func TestCreateConfFileDef(t *testing.T) {
+
+	// Setup test data
+	var tests = []struct {
+		name        string
+		fileName    string
+		fileType    string
+		filePath    string
+		expectErr   bool
+		expectedVal string
+	}{
+		{"No values", "", "", "", true, ""},
+		{"Just fileName", "fred", "", "", true, ""},
+		{"With fileName & filePath", "fred", "", "fred", true, ""},
+		{"With all - invalid fileType", "fred", "fred", "fred", true, ""},
+		{"With all - valid fileType", "fred", "json", "fred", false, ""},
+	}
+
+	// Iterate through the test data
+	assert := assert.New(t)
+	for _, test := range tests {
+
+		// Run each test
+		_, err := configutil.CreateConfFileDef(test.fileName, test.fileType, test.filePath)
+		if test.expectErr {
+			assert.NotNil(err, test.name)
+		} else {
+			assert.Nil(err, test.name)
+		}
+	}
+}
+
 // Test NewConfig
 func TestNewConfig(t *testing.T) {
 
@@ -59,49 +102,6 @@ func TestNewConfig(t *testing.T) {
 			assert.Nil(err, test.name)
 			assert.Equal(test.expectedVal, actualVal, test.name)
 		}
-	}
-}
-
-// Test NewConfigFile
-func TestNewConfigFile(t *testing.T) {
-
-	// Setup test data
-	var tests = []struct {
-		name        string
-		fileName    string
-		fileType    string
-		filePath    string
-		expectErr   bool
-		expectedVal string
-	}{
-		{"No values", "", "", "", true, ""},
-		{"Just fileName", "fred", "", "", true, ""},
-		{"With fileName & filePath", "fred", "", "fred", true, ""},
-		{"With all - invalid fileType", "fred", "fred", "fred", true, ""},
-		{"With all - valid fileType", "fred", "json", "fred", false, ""},
-	}
-
-	// Iterate through the test data
-	assert := assert.New(t)
-	for _, test := range tests {
-
-		// Run each test
-		_, err := configutil.NewConfigFile(test.fileName, test.fileType, test.filePath)
-		if test.expectErr {
-			assert.NotNil(err, test.name)
-		} else {
-			assert.Nil(err, test.name)
-		}
-	}
-}
-
-// Setup test case for NewConfigFromEnv
-func setupTestCase(t *testing.T) func(t *testing.T) {
-	t.Log("Setup for NewConfigFromEnv: creating environment variable")
-	os.Setenv("TEST_VAR_FRED", "BlahBlahBlah")
-	return func(t *testing.T) {
-		t.Log("Teardown for NewConfigFromEnv: removing environment variable")
-		os.Unsetenv("TEST_VAR_FRED")
 	}
 }
 
@@ -218,9 +218,9 @@ func TestNewConfigFromFile(t *testing.T) {
 
 	// Setup test config file values
 	var emptyConfFile configutil.ConfigFile
-	validConfFile, _ := configutil.NewConfigFile("testdata", "yaml", ".")
-	missingConfFile, _ := configutil.NewConfigFile("testdata2", "yaml", ".")
-	invalidConfFileType, _ := configutil.NewConfigFile("testdata", "json", ".")
+	validConfFile, _ := configutil.CreateConfFileDef("testdata", "yaml", ".")
+	missingConfFile, _ := configutil.CreateConfFileDef("testdata2", "yaml", ".")
+	invalidConfFileType, _ := configutil.CreateConfFileDef("testdata", "json", ".")
 
 	// Setup test data
 	var tests = []struct {

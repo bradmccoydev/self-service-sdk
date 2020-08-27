@@ -8,6 +8,15 @@ import (
 	"github.com/spf13/viper"
 )
 
+const (
+	// ConfigTypeJSON defines the JSON config type
+	ConfigTypeJSON string = "JSON"
+	// ConfigTypeTOML defines the TOML config type
+	ConfigTypeTOML string = "TOML"
+	// ConfigTypeYAML defines the YAML config type
+	ConfigTypeYAML string = "YAML"
+)
+
 // ConfigFile structure represents the metadata for a
 // configuration file that Viper can load
 type ConfigFile struct {
@@ -27,6 +36,41 @@ type DefaultValue struct {
 type EnvVariable struct {
 	EnvVar    string
 	ConfigKey string
+}
+
+// CreateConfFileDef creates a new configuration file instance
+// that can then be used to instantiate a configuration manager.
+//
+// Example:
+//
+//     // Create a config file instance
+//     svc := configutil.CreateConfFileDef(fileName, fileType, filePath)
+func CreateConfFileDef(fileName string, fileType string, filePath string) (ConfigFile, error) {
+
+	// Sanity checks
+	var conf ConfigFile
+	var err error = nil
+	if fileName == "" {
+		err = errors.New("File name must be provided")
+		return conf, err
+	}
+	if fileType == "" {
+		err = errors.New("File type must be provided")
+		return conf, err
+	}
+	switch strings.ToUpper(fileType) {
+	case ConfigTypeJSON, ConfigTypeTOML, ConfigTypeYAML:
+		// These are ok....
+	default:
+		err = fmt.Errorf("Unsupported configuration file type: %s", fileType)
+		return conf, err
+	}
+
+	// Return the configuration object
+	conf.Name = fileName
+	conf.Path = filePath
+	conf.Type = fileType
+	return conf, err
 }
 
 func loadDefaults(config *viper.Viper, defaults []DefaultValue) error {
@@ -62,41 +106,6 @@ func NewConfig(defaults []DefaultValue) (*viper.Viper, error) {
 
 	// Return the configuration object
 	return vCfg, err
-}
-
-// NewConfigFile creates a new configuration file instance
-// that can then be used to instantiate a configuration manager.
-//
-// Example:
-//
-//     // Create a config file instance
-//     svc := configutil.NewConfigFile(fileName, fileType, filePath)
-func NewConfigFile(fileName string, fileType string, filePath string) (ConfigFile, error) {
-
-	// Sanity checks
-	var conf ConfigFile
-	var err error = nil
-	if fileName == "" {
-		err = errors.New("File name must be provided")
-		return conf, err
-	}
-	if fileType == "" {
-		err = errors.New("File type must be provided")
-		return conf, err
-	}
-	switch strings.ToUpper(fileType) {
-	case "JSON", "TOML", "YAML":
-		// These are ok....
-	default:
-		err = fmt.Errorf("Unsupported configuration file type: %s", fileType)
-		return conf, err
-	}
-
-	// Return the configuration object
-	conf.Name = fileName
-	conf.Path = filePath
-	conf.Type = fileType
-	return conf, err
 }
 
 // NewConfigFromEnv creates a new instance of the
