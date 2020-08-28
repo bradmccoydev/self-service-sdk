@@ -8,8 +8,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// Setup test case for NewConfigFromEnv
-func setupTestCase(t *testing.T) func(t *testing.T) {
+// manageTestEnvVar handles creation/desctruction of an
+// environment variable for the test case NewConfigFromEnv
+func manageTestEnvVar(t *testing.T) func(t *testing.T) {
 	t.Log("Setup for NewConfigFromEnv: creating environment variable")
 	os.Setenv("TEST_VAR_FRED", "BlahBlahBlah")
 	return func(t *testing.T) {
@@ -169,7 +170,7 @@ func TestNewConfigFromEnv(t *testing.T) {
 	}
 
 	// Run setup routine to configure test env var
-	teardownTestCase := setupTestCase(t)
+	teardownTestCase := manageTestEnvVar(t)
 	defer teardownTestCase(t)
 
 	// Iterate through the test data
