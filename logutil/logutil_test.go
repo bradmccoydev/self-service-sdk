@@ -3,6 +3,7 @@ package logutil_test
 import (
 	"testing"
 
+	"github.com/bradmccoydev/self-service-sdk/internal"
 	"github.com/bradmccoydev/self-service-sdk/logutil"
 )
 
@@ -37,36 +38,35 @@ func manageLogConf(t *testing.T, genConfig bool) func(t *testing.T) {
 	}
 }
 
-// // Test CreateLogConfDef
-// func TestCreateLogConfDef(t *testing.T) {
+// Test CreateLogConfDef
+func TestCreateLogConfDef(t *testing.T) {
 
-// 	// Setup test data
-// 	tests := []struct {
-// 		name         string
-// 		timeFormat   string
-// 		logLevel     string
-// 		logToConsole bool
-// 		expectErr    bool
-// 	}{
-// 		{"No values", "", "", false, true},
-// 		{"Invalid time format", "fred", "", false, true},
-// 		{"Valid time format & invalid log level", logutil.TimeFormatUnix, "fred", false, true},
-// 		{"All valid", logutil.TimeFormatUnix, logutil.LogLevelInfo, false, false},
-// 	}
+	// Setup test data
+	tests := []struct {
+		name         string
+		timeFormat   string
+		logLevel     string
+		logToConsole bool
+		expectErr    bool
+	}{
+		{"No values", "", "", false, true},
+		{"Invalid time format", "fred", "", false, true},
+		{"Valid time format & invalid log level", logutil.TimeFormatUnix, "fred", false, true},
+		{"All valid", logutil.TimeFormatUnix, logutil.LogLevelInfo, false, false},
+	}
 
-// 	// Iterate through the test data
-// 	assert := assert.New(t)
-// 	for _, test := range tests {
+	// Iterate through the test data
+	for _, test := range tests {
 
-// 		// Run each test
-// 		_, err := logutil.CreateLogConfDef(test.timeFormat, test.logLevel, test.logToConsole)
-// 		if test.expectErr {
-// 			assert.NotNil(err, test.name)
-// 		} else {
-// 			assert.Nil(err, test.name)
-// 		}
-// 	}
-// }
+		// Run each test
+		_, err := logutil.CreateLogConfDef(test.timeFormat, test.logLevel, test.logToConsole)
+		if test.expectErr {
+			internal.HasError(t, err)
+		} else {
+			internal.NoError(t, err)
+		}
+	}
+}
 
 // Test LogDebug
 func TestLogDebug(t *testing.T) {

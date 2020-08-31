@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/bradmccoydev/self-service-sdk/configutil"
-	"github.com/stretchr/testify/assert"
+	"github.com/bradmccoydev/self-service-sdk/internal"
 )
 
 // manageTestEnvVar handles creation/desctruction of an
@@ -39,15 +39,14 @@ func TestCreateConfFileDef(t *testing.T) {
 	}
 
 	// Iterate through the test data
-	assert := assert.New(t)
 	for _, test := range tests {
 
 		// Run each test
 		_, err := configutil.CreateConfFileDef(test.fileName, test.fileType, test.filePath)
 		if test.expectErr {
-			assert.NotNil(err, test.name)
+			internal.HasError(t, err)
 		} else {
-			assert.Nil(err, test.name)
+			internal.NoError(t, err)
 		}
 	}
 }
@@ -91,17 +90,16 @@ func TestNewConfig(t *testing.T) {
 	}
 
 	// Iterate through the test data
-	assert := assert.New(t)
 	for _, test := range tests {
 
 		// Run each test
 		obj, err := configutil.NewConfig(test.defaults)
 		if test.expectErr {
-			assert.NotNil(err, test.name)
+			internal.HasError(t, err)
 		} else {
 			actualVal := obj.GetString("configKey")
-			assert.Nil(err, test.name)
-			assert.Equal(test.expectedVal, actualVal, test.name)
+			internal.NoError(t, err)
+			internal.Equals(t, test.expectedVal, actualVal)
 		}
 	}
 }
@@ -174,17 +172,16 @@ func TestNewConfigFromEnv(t *testing.T) {
 	defer teardownTestCase(t)
 
 	// Iterate through the test data
-	assert := assert.New(t)
 	for _, test := range tests {
 
 		// Run each test
 		obj, err := configutil.NewConfigFromEnv(test.defaults, test.envVars)
 		if test.expectErr {
-			assert.NotNil(err, test.name)
+			internal.HasError(t, err)
 		} else {
 			actualVal := obj.GetString(test.configKeyToCheck)
-			assert.Nil(err, test.name)
-			assert.Equal(test.expectedVal, actualVal, test.name)
+			internal.NoError(t, err)
+			internal.Equals(t, test.expectedVal, actualVal)
 		}
 	}
 }
@@ -245,17 +242,16 @@ func TestNewConfigFromFile(t *testing.T) {
 	}
 
 	// Iterate through the test data
-	assert := assert.New(t)
 	for _, test := range tests {
 
 		// Run each test
 		obj, err := configutil.NewConfigFromFile(test.defaults, test.confFile)
 		if test.expectErr {
-			assert.NotNil(err, test.name)
+			internal.HasError(t, err)
 		} else {
 			actualVal := obj.GetString(test.configKeyToCheck)
-			assert.Nil(err, test.name)
-			assert.Equal(test.expectedVal, actualVal, test.name)
+			internal.NoError(t, err)
+			internal.Equals(t, test.expectedVal, actualVal)
 		}
 	}
 }
