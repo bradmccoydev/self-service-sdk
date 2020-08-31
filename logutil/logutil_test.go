@@ -58,13 +58,16 @@ func TestCreateLogConfDef(t *testing.T) {
 	// Iterate through the test data
 	for _, test := range tests {
 
-		// Run each test
-		_, err := logutil.CreateLogConfDef(test.timeFormat, test.logLevel, test.logToConsole)
-		if test.expectErr {
-			internal.HasError(t, err)
-		} else {
-			internal.NoError(t, err)
-		}
+		t.Run(test.name, func(t *testing.T) {
+
+			// Run the test
+			_, err := logutil.CreateLogConfDef(test.timeFormat, test.logLevel, test.logToConsole)
+			if test.expectErr {
+				internal.HasError(t, err)
+			} else {
+				internal.NoError(t, err)
+			}
+		})
 	}
 }
 

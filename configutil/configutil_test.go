@@ -24,7 +24,7 @@ func TestCreateConfFileDef(t *testing.T) {
 
 	// Setup test data
 	var tests = []struct {
-		name        string
+		desc        string
 		fileName    string
 		fileType    string
 		filePath    string
@@ -41,13 +41,16 @@ func TestCreateConfFileDef(t *testing.T) {
 	// Iterate through the test data
 	for _, test := range tests {
 
-		// Run each test
-		_, err := configutil.CreateConfFileDef(test.fileName, test.fileType, test.filePath)
-		if test.expectErr {
-			internal.HasError(t, err)
-		} else {
-			internal.NoError(t, err)
-		}
+		t.Run(test.desc, func(t *testing.T) {
+
+			// Run the test
+			_, err := configutil.CreateConfFileDef(test.fileName, test.fileType, test.filePath)
+			if test.expectErr {
+				internal.HasError(t, err)
+			} else {
+				internal.NoError(t, err)
+			}
+		})
 	}
 }
 
@@ -76,7 +79,7 @@ func TestNewConfig(t *testing.T) {
 
 	// Setup test data
 	var tests = []struct {
-		name        string
+		desc        string
 		defaults    []configutil.DefaultValue
 		expectErr   bool
 		expectedVal string
@@ -92,15 +95,18 @@ func TestNewConfig(t *testing.T) {
 	// Iterate through the test data
 	for _, test := range tests {
 
-		// Run each test
-		obj, err := configutil.NewConfig(test.defaults)
-		if test.expectErr {
-			internal.HasError(t, err)
-		} else {
-			actualVal := obj.GetString("configKey")
-			internal.NoError(t, err)
-			internal.Equals(t, test.expectedVal, actualVal)
-		}
+		t.Run(test.desc, func(t *testing.T) {
+
+			// Run the test
+			obj, err := configutil.NewConfig(test.defaults)
+			if test.expectErr {
+				internal.HasError(t, err)
+			} else {
+				actualVal := obj.GetString("configKey")
+				internal.NoError(t, err)
+				internal.Equals(t, test.expectedVal, actualVal)
+			}
+		})
 	}
 }
 
@@ -148,7 +154,7 @@ func TestNewConfigFromEnv(t *testing.T) {
 
 	// Setup test data
 	var tests = []struct {
-		name             string
+		desc             string
 		defaults         []configutil.DefaultValue
 		envVars          []configutil.EnvVariable
 		expectErr        bool
@@ -174,15 +180,18 @@ func TestNewConfigFromEnv(t *testing.T) {
 	// Iterate through the test data
 	for _, test := range tests {
 
-		// Run each test
-		obj, err := configutil.NewConfigFromEnv(test.defaults, test.envVars)
-		if test.expectErr {
-			internal.HasError(t, err)
-		} else {
-			actualVal := obj.GetString(test.configKeyToCheck)
-			internal.NoError(t, err)
-			internal.Equals(t, test.expectedVal, actualVal)
-		}
+		t.Run(test.desc, func(t *testing.T) {
+
+			// Run the test
+			obj, err := configutil.NewConfigFromEnv(test.defaults, test.envVars)
+			if test.expectErr {
+				internal.HasError(t, err)
+			} else {
+				actualVal := obj.GetString(test.configKeyToCheck)
+				internal.NoError(t, err)
+				internal.Equals(t, test.expectedVal, actualVal)
+			}
+		})
 	}
 }
 
@@ -222,7 +231,7 @@ func TestNewConfigFromFile(t *testing.T) {
 
 	// Setup test data
 	var tests = []struct {
-		name             string
+		desc             string
 		defaults         []configutil.DefaultValue
 		confFile         configutil.ConfigFile
 		expectErr        bool
@@ -244,14 +253,17 @@ func TestNewConfigFromFile(t *testing.T) {
 	// Iterate through the test data
 	for _, test := range tests {
 
-		// Run each test
-		obj, err := configutil.NewConfigFromFile(test.defaults, test.confFile)
-		if test.expectErr {
-			internal.HasError(t, err)
-		} else {
-			actualVal := obj.GetString(test.configKeyToCheck)
-			internal.NoError(t, err)
-			internal.Equals(t, test.expectedVal, actualVal)
-		}
+		t.Run(test.desc, func(t *testing.T) {
+
+			// Run the test
+			obj, err := configutil.NewConfigFromFile(test.defaults, test.confFile)
+			if test.expectErr {
+				internal.HasError(t, err)
+			} else {
+				actualVal := obj.GetString(test.configKeyToCheck)
+				internal.NoError(t, err)
+				internal.Equals(t, test.expectedVal, actualVal)
+			}
+		})
 	}
 }
