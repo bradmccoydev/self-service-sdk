@@ -25,6 +25,8 @@ const (
 	testValidAwsSecret string = "TESTING_AWS_SECRET_ACCESS_KEY"
 	// Environment variable for ***PASSING IN*** a valid AWS region
 	testValidAwsRegion string = "TESTING_AWS_DEFAULT_REGION"
+	// Environment variable for ***PASSING IN*** a valid AWS user id
+	testValidAwsUserId string = "TESTING_AWS_USER_ID"
 )
 
 // Common structure for defining test data
@@ -49,6 +51,7 @@ type awscreds struct {
 	key    string
 	secret string
 	region string
+	userid string
 }
 
 // Global variable for AWS credentials
@@ -110,11 +113,17 @@ func TestMain(m *testing.M) {
 		log.Println("The environment variable TESTING_AWS_DEFAULT_REGION is not set!!!")
 		os.Exit(1)
 	}
+	userid := os.Getenv(testValidAwsUserId)
+	if userid == "" {
+		log.Println("The environment variable TESTING_AWS_USER_ID is not set!!!")
+		os.Exit(1)
+	}
 
 	// Set the global variable to make the values available for all tests
 	AwsCreds.key = key
 	AwsCreds.secret = secret
 	AwsCreds.region = region
+	AwsCreds.userid = userid
 
 	// Run the various test functions
 	exitVal := m.Run()
@@ -132,6 +141,7 @@ func TestNewSession(t *testing.T) {
 		{"Just key", true, "fred", false, "", false, "", false, "", false, "", false, ""},
 		{"Just secret", false, "", true, "fred", false, "", false, "", false, "", false, ""},
 		{"Just region", false, "", false, "", true, "us-west-2", false, "", false, "", false, ""},
+		{"Valid credentials", true, AwsCreds.key, true, AwsCreds.secret, true, AwsCreds.region, false, "", false, "", false, AwsCreds.userid},
 	}
 
 	// Iterate through the test data
