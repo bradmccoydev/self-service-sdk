@@ -53,7 +53,33 @@ type Filter struct {
 // Update an item
 // Delete an item
 
-// GetTableList - retrieves self service commands
+// GetTableDetails - retrieves the details for a table
+func GetTableDetails(sess *session.Session, tableName string) (*dynamodb.DescribeTableOutput, error) {
+
+	// Sanity check
+	if tableName == "" {
+		err := errors.New("Table name must be provided")
+		return nil, err
+	}
+
+	// Create the DynamoDB client
+	svc := dynamodb.New(sess)
+
+	// Make the call to DynamoDB
+	request := &dynamodb.DescribeTableInput{}
+	request.SetTableName(tableName)
+	result, err := svc.DescribeTable(request)
+
+	// If not ok then bail
+	if err != nil {
+		return nil, err
+	}
+
+	// Return it
+	return result, nil
+}
+
+// GetTableList - retrieves a list of tables
 func GetTableList(sess *session.Session) ([]TableName, error) {
 
 	// Create the DynamoDB client
