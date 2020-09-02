@@ -22,3 +22,4 @@ Certain environment variables need to be set for the various unit tests to run. 
 | TESTING_AWS_ACCESS_KEY_ID | A valid AWS Access Key that can be used to connect to AWS |
 | TESTING_AWS_SECRET_ACCESS_KEY | The secret for the above AWS access key |
 | TESTING_AWS_DEFAULT_REGION | The default AWS region to use |
+| TESTING_AWS_USER_ID | The User ID of the above AWS user. This is used for validating a successful login |
