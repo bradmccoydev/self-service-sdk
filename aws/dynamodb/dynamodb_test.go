@@ -144,3 +144,40 @@ func TestNewFilterExpression(t *testing.T) {
 		})
 	}
 }
+
+// Test NewProjectionExpression
+func TestNewProjectionExpression(t *testing.T) {
+
+	// Setup field test data
+	var empty []dynamodb.Field
+	noName := []dynamodb.Field{{Name: ""}}
+	single := []dynamodb.Field{{Name: "fred"}}
+	multiple := []dynamodb.Field{{Name: "fred"}, {Name: "harry"}, {Name: "norm"}}
+
+	// Setup test data
+	tests := []struct {
+		desc      string
+		fields    []dynamodb.Field
+		expectErr bool
+	}{
+		{"No fields", empty, true},
+		{"Empty field name", noName, true},
+		{"Single field", single, false},
+		{"Multiple fields", multiple, false},
+	}
+
+	// Iterate through the test data
+	for _, test := range tests {
+
+		t.Run(test.desc, func(t *testing.T) {
+
+			// Run the test
+			_, err := dynamodb.NewProjectionExpression(test.fields)
+			if test.expectErr {
+				internal.HasError(t, err)
+			} else {
+				internal.NoError(t, err)
+			}
+		})
+	}
+}

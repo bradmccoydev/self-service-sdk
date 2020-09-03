@@ -36,6 +36,11 @@ type TableName struct {
 	TableName string
 }
 
+// Field structure manages fields for a projection
+type Field struct {
+	Name string
+}
+
 // Filter structure manages filter expressions
 type Filter struct {
 	Field    string
@@ -110,7 +115,7 @@ func GetTableList(sess *session.Session) ([]TableName, error) {
 func NewFilterExpression(filters []Filter) (expression.ConditionBuilder, error) {
 
 	// Iterate records provided
-	var count int = 0
+	var firstTime bool = true
 	var err error = nil
 	var filterExpr expression.ConditionBuilder
 	for _, i := range filters {
@@ -152,9 +157,9 @@ func NewFilterExpression(filters []Filter) (expression.ConditionBuilder, error) 
 		}
 
 		// First condition?
-		if count == 0 {
+		if firstTime == true {
 			filterExpr = tmpcond
-			count++
+			firstTime = false
 		} else {
 			filterExpr = filterExpr.And(tmpcond)
 		}
@@ -162,4 +167,38 @@ func NewFilterExpression(filters []Filter) (expression.ConditionBuilder, error) 
 
 	// Return it
 	return filterExpr, err
+}
+
+// NewProjectionExpression handles creation of a projection expression
+func NewProjectionExpression(fields []Field) (expression.ProjectionBuilder, error) {
+
+	// Setup
+	var firstTime bool = true
+	var err error = nil
+	var projExpr expression.ProjectionBuilder
+	if len(fields) == 0 {
+		err = errors.New("Must provide at least one field")
+		return projExpr, err
+	}
+
+	// Iterate records provided
+	for _, i := range fields {
+
+		// Sanity check
+		if i.Name == "" {
+			err = errors.New("Field name must be provided")
+			return projExpr, err
+		}
+
+		// Add the field
+		if firstTime == true {
+			projExpr = expression.NamesList(expression.Name(i.Name))
+			firstTime = false
+		} else {
+			projExpr = expression.AddNames(projExpr, expression.Name(i.Name))
+		}
+	}
+
+	// Return it
+	return projExpr, err
 }
