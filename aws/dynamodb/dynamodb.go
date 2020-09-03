@@ -58,6 +58,50 @@ type Filter struct {
 // Update an item
 // Delete an item
 
+// GetTableArn - retrieves the ARN for the table
+func GetTableArn(sess *session.Session, tableName string) (*string, error) {
+
+	// Get the table details
+	result, err := GetTableDetails(sess, tableName)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check we retrieved something
+	if result.Table == nil {
+		err := errors.New("Table details were not returned")
+		return nil, err
+	}
+
+	// Extract the ARN
+	arn := result.Table.TableArn
+
+	// Return it
+	return arn, nil
+}
+
+// GetTableItemCount - retrieves the number of items
+func GetTableItemCount(sess *session.Session, tableName string) (*int64, error) {
+
+	// Get the table details
+	result, err := GetTableDetails(sess, tableName)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check we retrieved something
+	if result.Table == nil {
+		err := errors.New("Table details were not returned")
+		return nil, err
+	}
+
+	// Extract the item count
+	count := result.Table.ItemCount
+
+	// Return it
+	return count, nil
+}
+
 // GetTableDetails - retrieves the details for a table
 func GetTableDetails(sess *session.Session, tableName string) (*dynamodb.DescribeTableOutput, error) {
 

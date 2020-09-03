@@ -28,6 +28,66 @@ func TestMain(m *testing.M) {
 	os.Exit(exitVal)
 }
 
+// Test GetTableArn
+func TestGetTableArn(t *testing.T) {
+
+	// Setup test data
+	tests := []struct {
+		desc      string
+		tableName string
+		expectErr bool
+	}{
+		{"Invalid table name", "FredSmith", true},
+		{"Valid table name", "service", false},
+	}
+
+	// Iterate through the test data
+	for _, test := range tests {
+
+		t.Run(test.desc, func(t *testing.T) {
+
+			// Run the test
+			sess := internal.CreateAwsSession(true)
+			_, err := dynamodb.GetTableArn(sess, test.tableName)
+			if test.expectErr {
+				internal.HasError(t, err)
+			} else {
+				internal.NoError(t, err)
+			}
+		})
+	}
+}
+
+// Test GetTableItemCount
+func TestGetTableItemCount(t *testing.T) {
+
+	// Setup test data
+	tests := []struct {
+		desc      string
+		tableName string
+		expectErr bool
+	}{
+		{"Invalid table name", "FredSmith", true},
+		{"Valid table name", "service", false},
+	}
+
+	// Iterate through the test data
+	for _, test := range tests {
+
+		t.Run(test.desc, func(t *testing.T) {
+
+			// Run the test
+			sess := internal.CreateAwsSession(true)
+			_, err := dynamodb.GetTableItemCount(sess, test.tableName)
+			if test.expectErr {
+				internal.HasError(t, err)
+			} else {
+				internal.NoError(t, err)
+			}
+		})
+	}
+}
+
 // Test GetTableDetails
 func TestGetTableDetails(t *testing.T) {
 
@@ -41,7 +101,7 @@ func TestGetTableDetails(t *testing.T) {
 		{"No session", false, "", true},
 		{"With session but no table name", true, "", true},
 		{"With session and invalid table name", true, "FredSmith", true},
-		{"With session and valid table name", true, "command", false},
+		{"With session and valid table name", true, "service", false},
 	}
 
 	// Iterate through the test data
