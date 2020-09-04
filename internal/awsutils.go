@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/bradmccoydev/self-service-sdk/aws/auth"
@@ -20,6 +21,8 @@ const (
 	EnvAwsRegion string = "AWS_REGION"
 	// Environment variable for AWS session token
 	EnvAwsSessionToken string = "AWS_SESSION_TOKEN"
+	// Environment variable for determining whether to run AWS related tests
+	testAwsEnabled string = "TESTING_AWS_ENABLED"
 	// Environment variable for ***PASSING IN*** a valid AWS key
 	testValidAwsKey string = "TESTING_AWS_ACCESS_KEY_ID"
 	// Environment variable for ***PASSING IN*** a valid AWS Secret
@@ -112,4 +115,19 @@ func LoadAwsCreds() (AwsCreds, error) {
 	values.Region = region
 	values.Userid = userid
 	return values, err
+}
+
+// PerformAwsTests - checks whether the TESTING_AWS_ENABLED
+// environment variable is set to TRUE
+func PerformAwsTests() bool {
+
+	// Setup
+	var doAwsTests bool = false
+	env := os.Getenv(testAwsEnabled)
+	if strings.ToUpper(env) == "TRUE" {
+		doAwsTests = true
+	}
+
+	// Return the values
+	return doAwsTests
 }
