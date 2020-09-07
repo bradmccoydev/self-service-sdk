@@ -1,3 +1,8 @@
+/*
+	Package configutil provides a framework for handling configuration parameters.
+	It is based on Viper (https://github.com/spf13/viper) and supports setting of
+	configuration parameters from a file &/or environment variables.
+*/
 package configutil
 
 import (
@@ -9,16 +14,12 @@ import (
 )
 
 const (
-	// ConfigTypeJSON defines the JSON config type
-	ConfigTypeJSON string = "JSON"
-	// ConfigTypeTOML defines the TOML config type
-	ConfigTypeTOML string = "TOML"
-	// ConfigTypeYAML defines the YAML config type
-	ConfigTypeYAML string = "YAML"
+	configTypeJSON string = "JSON"
+	configTypeTOML string = "TOML"
+	configTypeYAML string = "YAML"
 )
 
-// ConfigFile structure represents the metadata for a
-// configuration file that Viper can load
+// ConfigFile represents the metadata for a configuration file
 type ConfigFile struct {
 	Name string
 	Path string
@@ -59,7 +60,7 @@ func CreateConfFileDef(fileName string, fileType string, filePath string) (Confi
 		return conf, err
 	}
 	switch strings.ToUpper(fileType) {
-	case ConfigTypeJSON, ConfigTypeTOML, ConfigTypeYAML:
+	case configTypeJSON, configTypeTOML, configTypeYAML:
 		// These are ok....
 	default:
 		err = fmt.Errorf("Unsupported configuration file type: %s", fileType)

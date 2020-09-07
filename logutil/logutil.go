@@ -1,3 +1,7 @@
+/*
+	Package logutil provides a framework for handling logging.
+	It is based on Zerolog (https://github.com/rs/zerolog).
+*/
 package logutil
 
 import (
