@@ -201,7 +201,7 @@ func TestNewFilterExpression(t *testing.T) {
 
 			// Run the test
 			filters := []dynamodb.Filter{{test.field, test.operator, test.value}}
-			_, err := dynamodb.NewFilterExpression(filters)
+			_, err := dynamodb.NewFilter(filters)
 			if test.expectErr {
 				internal.HasError(t, err)
 			} else {
@@ -238,7 +238,7 @@ func TestNewProjectionExpression(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 
 			// Run the test
-			_, err := dynamodb.NewProjectionExpression(test.fields)
+			_, err := dynamodb.NewProjection(test.fields)
 			if test.expectErr {
 				internal.HasError(t, err)
 			} else {

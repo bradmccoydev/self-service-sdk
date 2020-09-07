@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
+
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
@@ -128,6 +131,36 @@ func GetTableDetails(sess *session.Session, tableName string) (*dynamodb.Describ
 	return result, nil
 }
 
+// GetTableItems - retrieves matching items from the specified table
+func GetTableItems(sess *session.Session, tableName string, expr expression.Expression, response interface{}) error {
+
+	// Create the DynamoDB client
+	svc := dynamodb.New(sess)
+
+	// Build the query params
+	params := &dynamodb.ScanInput{
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		FilterExpression:          expr.Filter(),
+		ProjectionExpression:      expr.Projection(),
+		TableName:                 aws.String(tableName),
+	}
+
+	// Make the call to DynamoDB
+	result, err := svc.Scan(params)
+
+	// If not ok then bail
+	if err != nil {
+		return err
+	}
+
+	// Massage the result into the response structure
+	err = dynamodbattribute.UnmarshalListOfMaps(result.Items, &response)
+
+	// Wrap up
+	return err
+}
+
 // GetTableList - retrieves a list of tables
 func GetTableList(sess *session.Session) ([]TableName, error) {
 
@@ -155,8 +188,48 @@ func GetTableList(sess *session.Session) ([]TableName, error) {
 	return response, nil
 }
 
-// NewFilterExpression handles creation of a filter expression
-func NewFilterExpression(filters []Filter) (expression.ConditionBuilder, error) {
+// NewExpression creates a new query expression object
+func NewExpression(filters []Filter, projs []Field) (expression.Expression, error) {
+
+	// Create new query expression
+	var emptyExpr expression.Expression
+	exprBuilder := expression.NewBuilder()
+
+	// Do we need to add a filter expression?
+	if filters != nil {
+
+		// Create the filter expression
+		filtExpr, err := NewFilter(filters)
+		if err != nil {
+			return emptyExpr, err
+		}
+
+		// Add the filter expression
+		exprBuilder.WithFilter(filtExpr)
+	}
+
+	// Do we need to add a projection expression
+	if projs != nil {
+
+		// Create the projection expression
+		projExpr, err := NewProjection(projs)
+		if err != nil {
+			return emptyExpr, err
+		}
+
+		// Add the projection expression
+		exprBuilder.WithProjection(projExpr)
+	}
+
+	// Build the expression
+	expr, err := exprBuilder.Build()
+
+	// Return it
+	return expr, err
+}
+
+// NewFilter creates a filter expression (ie where clause)
+func NewFilter(filters []Filter) (expression.ConditionBuilder, error) {
 
 	// Iterate records provided
 	var firstTime bool = true
@@ -213,8 +286,8 @@ func NewFilterExpression(filters []Filter) (expression.ConditionBuilder, error) 
 	return filterExpr, err
 }
 
-// NewProjectionExpression handles creation of a projection expression
-func NewProjectionExpression(fields []Field) (expression.ProjectionBuilder, error) {
+// NewProjection create a projection condition (ie restricts the fields returned)
+func NewProjection(fields []Field) (expression.ProjectionBuilder, error) {
 
 	// Setup
 	var firstTime bool = true
