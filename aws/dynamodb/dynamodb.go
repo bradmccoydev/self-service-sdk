@@ -1,3 +1,13 @@
+/*
+	Package dynamodb wrappers the AWS GoLang SDK packages
+	for DynamoDB to provide a simplified api to perform
+	the following tasks:
+		* retrieve a list of tables
+		* retrieve details about a specific table
+		* retrieve items from a table
+		* create a filter to retrict which table items are retrieved
+		* create a projection to retrict which table item fields are retrieved
+*/
 package dynamodb
 
 import (
@@ -5,11 +15,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
 )
 
@@ -44,15 +53,14 @@ type Field struct {
 	Name string
 }
 
-// Filter structure manages filter expressions
-type Filter struct {
+// Condition structure is used for key condition & filter expressions
+type Condition struct {
 	Field    string
 	Operator string
 	Value    string
 }
 
 // To Do:
-// Create a projection expression
 // Perform table scan
 // - with all options
 // - with just filter
@@ -131,8 +139,14 @@ func GetTableDetails(sess *session.Session, tableName string) (*dynamodb.Describ
 	return result, nil
 }
 
-// GetTableItems - retrieves matching items from the specified table
-func GetTableItems(sess *session.Session, tableName string, expr expression.Expression, response interface{}) error {
+// GetItems - retrieves matching items from the specified table
+func GetItems(sess *session.Session, tableName string, expr expression.Expression, castTo interface{}) error {
+
+	// Sanity check
+	if tableName == "" {
+		err := errors.New("Table name must be provided")
+		return err
+	}
 
 	// Create the DynamoDB client
 	svc := dynamodb.New(sess)
@@ -154,10 +168,8 @@ func GetTableItems(sess *session.Session, tableName string, expr expression.Expr
 		return err
 	}
 
-	// Massage the result into the response structure
-	err = dynamodbattribute.UnmarshalListOfMaps(result.Items, &response)
-
-	// Wrap up
+	// Massage the result(s) & return
+	err = dynamodbattribute.UnmarshalListOfMaps(result.Items, &castTo)
 	return err
 }
 
@@ -189,47 +201,60 @@ func GetTableList(sess *session.Session) ([]TableName, error) {
 }
 
 // NewExpression creates a new query expression object
-func NewExpression(filters []Filter, projs []Field) (expression.Expression, error) {
+func NewExpression(keys []Condition, filters []Condition, projs []Field) (expression.Expression, error) {
 
 	// Create new query expression
 	var emptyExpr expression.Expression
-	exprBuilder := expression.NewBuilder()
+	builder := expression.NewBuilder()
 
-	// Do we need to add a filter expression?
+	// Did we get key conditions?
+	if keys != nil {
+
+		// Create a key condition expression
+		keyExpr, err := newKeyExpression(keys)
+		if err != nil {
+			return emptyExpr, err
+		}
+
+		// Add the key condition expression
+		builder = builder.WithKeyCondition(keyExpr)
+	}
+
+	// Did we get filter conditions?
 	if filters != nil {
 
-		// Create the filter expression
-		filtExpr, err := NewFilter(filters)
+		// Create a filter expression
+		filtExpr, err := newFilterExpression(filters)
 		if err != nil {
 			return emptyExpr, err
 		}
 
 		// Add the filter expression
-		exprBuilder.WithFilter(filtExpr)
+		builder = builder.WithFilter(filtExpr)
 	}
 
-	// Do we need to add a projection expression
+	// Did we get a projection?
 	if projs != nil {
 
-		// Create the projection expression
-		projExpr, err := NewProjection(projs)
+		// Create a projection expression
+		projExpr, err := newProjectionExpression(projs)
 		if err != nil {
 			return emptyExpr, err
 		}
 
 		// Add the projection expression
-		exprBuilder.WithProjection(projExpr)
+		builder = builder.WithProjection(projExpr)
 	}
 
 	// Build the expression
-	expr, err := exprBuilder.Build()
+	expr, err := builder.Build()
 
 	// Return it
 	return expr, err
 }
 
-// NewFilter creates a filter expression (ie where clause)
-func NewFilter(filters []Filter) (expression.ConditionBuilder, error) {
+// newFilterExpression creates a filter expression for use with a scan call
+func newFilterExpression(filters []Condition) (expression.ConditionBuilder, error) {
 
 	// Iterate records provided
 	var firstTime bool = true
@@ -239,11 +264,11 @@ func NewFilter(filters []Filter) (expression.ConditionBuilder, error) {
 
 		// Sanity check
 		if i.Field == "" {
-			err = errors.New("Field name must be provided")
+			err = errors.New("Field name must be provided for a filter expression")
 			return filterExpr, err
 		}
 		if i.Operator == "" {
-			err = errors.New("Operator must be provided")
+			err = errors.New("Operator must be provided for a filter expression")
 			return filterExpr, err
 		}
 
@@ -269,7 +294,7 @@ func NewFilter(filters []Filter) (expression.ConditionBuilder, error) {
 		case NotEqual:
 			tmpcond = expression.Name(i.Field).NotEqual(expression.Value(i.Value))
 		default:
-			err = fmt.Errorf("Unsupported operator type: %s", i.Operator)
+			err = fmt.Errorf("Filter expressions do not support operator type: %s", i.Operator)
 			return filterExpr, err
 		}
 
@@ -286,15 +311,67 @@ func NewFilter(filters []Filter) (expression.ConditionBuilder, error) {
 	return filterExpr, err
 }
 
-// NewProjection create a projection condition (ie restricts the fields returned)
-func NewProjection(fields []Field) (expression.ProjectionBuilder, error) {
+// newKeyExpression creates a key condition expression for use with a query call
+func newKeyExpression(conditions []Condition) (expression.KeyConditionBuilder, error) {
+
+	// Iterate records provided
+	var firstTime bool = true
+	var err error = nil
+	var keyExpr expression.KeyConditionBuilder
+	for _, i := range conditions {
+
+		// Sanity check
+		if i.Field == "" {
+			err = errors.New("Field name must be provided for a key condition")
+			return keyExpr, err
+		}
+		if i.Operator == "" {
+			err = errors.New("Operator must be provided for a key condition")
+			return keyExpr, err
+		}
+
+		// Build the condition
+		var tmpcond expression.KeyConditionBuilder
+		switch strings.ToUpper(i.Operator) {
+		case BeginsWith:
+			tmpcond = expression.Key(i.Field).BeginsWith(i.Value)
+		case Equals:
+			tmpcond = expression.Key(i.Field).Equal(expression.Value(i.Value))
+		case GreaterThan:
+			tmpcond = expression.Key(i.Field).GreaterThan(expression.Value(i.Value))
+		case GreaterThanOrEquals:
+			tmpcond = expression.Key(i.Field).GreaterThanEqual(expression.Value(i.Value))
+		case LessThan:
+			tmpcond = expression.Key(i.Field).LessThan(expression.Value(i.Value))
+		case LessThanOrEquals:
+			tmpcond = expression.Key(i.Field).LessThanEqual(expression.Value(i.Value))
+		default:
+			err = fmt.Errorf("Key conditions do not support operator type: %s", i.Operator)
+			return keyExpr, err
+		}
+
+		// First condition?
+		if firstTime == true {
+			keyExpr = tmpcond
+			firstTime = false
+		} else {
+			keyExpr = keyExpr.And(tmpcond)
+		}
+	}
+
+	// Return it
+	return keyExpr, err
+}
+
+// newProjectionExpression create a projection condition (ie restricts the fields returned)
+func newProjectionExpression(fields []Field) (expression.ProjectionBuilder, error) {
 
 	// Setup
 	var firstTime bool = true
 	var err error = nil
 	var projExpr expression.ProjectionBuilder
 	if len(fields) == 0 {
-		err = errors.New("Must provide at least one field")
+		err = errors.New("Must provide at least one field for a projection expression")
 		return projExpr, err
 	}
 
@@ -303,7 +380,7 @@ func NewProjection(fields []Field) (expression.ProjectionBuilder, error) {
 
 		// Sanity check
 		if i.Name == "" {
-			err = errors.New("Field name must be provided")
+			err = errors.New("Field name must be provided for a projection expression")
 			return projExpr, err
 		}
 

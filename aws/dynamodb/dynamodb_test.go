@@ -1,11 +1,13 @@
 package dynamodb_test
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
 	"github.com/bradmccoydev/self-service-sdk/aws/dynamodb"
 	"github.com/bradmccoydev/self-service-sdk/internal"
 )
@@ -167,31 +169,42 @@ func TestGetTableList(t *testing.T) {
 	}
 }
 
-// Test NewFilterExpression
-func TestNewFilterExpression(t *testing.T) {
+// Test GetItems
+func TestGetItems(t *testing.T) {
+
+	// Setup response structures
+	type ServiceItem struct {
+		Service       string `json:"service"`
+		Title         string `json:"title"`
+		Description   string `json:"description"`
+		Documentation string `json:"documentation"`
+		Type          string `json:"type"`
+	}
+	var response *[]ServiceItem
+
+	// Setup filter test data
+	invalidFilter := []dynamodb.Condition{{Field: "fred", Operator: "EQ", Value: "123"}}
+	validFilter := []dynamodb.Condition{{Field: "service", Operator: "EQ", Value: "123"}}
+
+	// Setup expression test data
+	var emptyExpression expression.Expression
+	invalidFilterExpr, _ := dynamodb.NewExpression(nil, invalidFilter, nil)
+	validFilterExpr, _ := dynamodb.NewExpression(nil, validFilter, nil)
 
 	// Setup test data
 	tests := []struct {
 		desc      string
-		field     string
-		operator  string
-		value     string
+		validSess bool
+		tableName string
+		expr      expression.Expression
 		expectErr bool
 	}{
-		{"No values", "", "", "", true},
-		{"Just a field", "fred", "", "", true},
-		{"Just an operator", "", "fred", "", true},
-		{"Just a value", "", "fred", "", true},
-		{"Invalid operator", "fred", "fred", "fred", true},
-		{"All valid - begins with", "fred", "BW", "fred", false},
-		{"All valid - contains", "fred", "CO", "fred", false},
-		{"All valid - equals", "fred", "EQ", "fred", false},
-		{"All valid - greater than", "fred", "GT", "fred", false},
-		{"All valid - greater than or equals", "fred", "GE", "fred", false},
-		{"All valid - in", "fred", "IN", "fred", false},
-		{"All valid - less than", "fred", "LT", "fred", false},
-		{"All valid - less than or equals", "fred", "LE", "fred", false},
-		{"All valid - not equals", "fred", "NE", "fred", false},
+		{"No inputs", false, "", emptyExpression, true},
+		{"Just session", true, "", emptyExpression, true},
+		{"Session & invalid table name", true, "fred", emptyExpression, true},
+		{"Session & valid table name", true, "service", emptyExpression, false},
+		{"Session, valid table name & invalid filter", true, "service", invalidFilterExpr, true},
+		{"Session, valid table name & valid filter", true, "service", validFilterExpr, false},
 	}
 
 	// Iterate through the test data
@@ -200,8 +213,13 @@ func TestNewFilterExpression(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 
 			// Run the test
-			filters := []dynamodb.Filter{{test.field, test.operator, test.value}}
-			_, err := dynamodb.NewFilter(filters)
+			var sess *session.Session
+			if test.validSess {
+				sess = internal.CreateAwsSession(true)
+			} else {
+				sess = internal.CreateAwsSession(false)
+			}
+			err := dynamodb.GetItems(sess, test.tableName, test.expr, &response)
 			if test.expectErr {
 				internal.HasError(t, err)
 			} else {
@@ -211,25 +229,41 @@ func TestNewFilterExpression(t *testing.T) {
 	}
 }
 
-// Test NewProjectionExpression
-func TestNewProjectionExpression(t *testing.T) {
+// Test NewExpression
+func TestNewExpression(t *testing.T) {
 
-	// Setup field test data
-	var empty []dynamodb.Field
-	noName := []dynamodb.Field{{Name: ""}}
-	single := []dynamodb.Field{{Name: "fred"}}
-	multiple := []dynamodb.Field{{Name: "fred"}, {Name: "harry"}, {Name: "norm"}}
+	// Setup key condition test data
+	var noCond []dynamodb.Condition
+	emptyCond := []dynamodb.Condition{{}}
+	validCond := []dynamodb.Condition{{Field: "service", Operator: "EQ", Value: "123"}}
+
+	// Setup filter test data
+	var noFilter []dynamodb.Condition
+	emptyFilter := []dynamodb.Condition{{}}
+	validFilter := []dynamodb.Condition{{Field: "service", Operator: "EQ", Value: "123"}}
+
+	// Setup projection test data
+	var noProj []dynamodb.Field
+	emptyProj := []dynamodb.Field{{}}
+	noNameProj := []dynamodb.Field{{Name: ""}}
+	singleProj := []dynamodb.Field{{Name: "fred"}}
+	multipleProj := []dynamodb.Field{{Name: "fred"}, {Name: "harry"}, {Name: "norm"}}
 
 	// Setup test data
 	tests := []struct {
-		desc      string
-		fields    []dynamodb.Field
-		expectErr bool
+		desc        string
+		keys        []dynamodb.Condition
+		filters     []dynamodb.Condition
+		projections []dynamodb.Field
+		expectErr   bool
 	}{
-		{"No fields", empty, true},
-		{"Empty field name", noName, true},
-		{"Single field", single, false},
-		{"Multiple fields", multiple, false},
+		{"No inputs", noCond, noFilter, noProj, false},
+		{"Empty inputs", emptyCond, emptyFilter, emptyProj, true},
+		{"Valid key condition", validCond, noFilter, noProj, false},
+		{"Valid key condition & empty filter", validCond, emptyFilter, emptyProj, true},
+		{"Valid key condition & filter & invalid projection", validCond, validFilter, noNameProj, true},
+		{"Valid key condition & filter & single projection", validCond, validFilter, singleProj, false},
+		{"Valid key condition & filter & multi projection", validCond, validFilter, multipleProj, false},
 	}
 
 	// Iterate through the test data
@@ -238,12 +272,94 @@ func TestNewProjectionExpression(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 
 			// Run the test
-			_, err := dynamodb.NewProjection(test.fields)
+			expr, err := dynamodb.NewExpression(test.keys, test.filters, test.projections)
 			if test.expectErr {
 				internal.HasError(t, err)
 			} else {
 				internal.NoError(t, err)
+				fmt.Println("Expression", expr)
 			}
 		})
 	}
 }
+
+// // Test NewFilter
+// func TestNewFilter(t *testing.T) {
+
+// 	// Setup test data
+// 	tests := []struct {
+// 		desc      string
+// 		field     string
+// 		operator  string
+// 		value     string
+// 		expectErr bool
+// 	}{
+// 		{"No values", "", "", "", true},
+// 		{"Just a field", "fred", "", "", true},
+// 		{"Just an operator", "", "fred", "", true},
+// 		{"Just a value", "", "fred", "", true},
+// 		{"Invalid operator", "fred", "fred", "fred", true},
+// 		{"All valid - begins with", "fred", "BW", "fred", false},
+// 		{"All valid - contains", "fred", "CO", "fred", false},
+// 		{"All valid - equals", "fred", "EQ", "fred", false},
+// 		{"All valid - greater than", "fred", "GT", "fred", false},
+// 		{"All valid - greater than or equals", "fred", "GE", "fred", false},
+// 		{"All valid - in", "fred", "IN", "fred", false},
+// 		{"All valid - less than", "fred", "LT", "fred", false},
+// 		{"All valid - less than or equals", "fred", "LE", "fred", false},
+// 		{"All valid - not equals", "fred", "NE", "fred", false},
+// 	}
+
+// 	// Iterate through the test data
+// 	for _, test := range tests {
+
+// 		t.Run(test.desc, func(t *testing.T) {
+
+// 			// Run the test
+// 			filters := []dynamodb.Filter{{test.field, test.operator, test.value}}
+// 			_, err := dynamodb.NewFilter(filters)
+// 			if test.expectErr {
+// 				internal.HasError(t, err)
+// 			} else {
+// 				internal.NoError(t, err)
+// 			}
+// 		})
+// 	}
+// }
+
+// // Test NewProjection
+// func TestNewProjection(t *testing.T) {
+
+// 	// Setup field test data
+// 	var empty []dynamodb.Field
+// 	noName := []dynamodb.Field{{Name: ""}}
+// 	single := []dynamodb.Field{{Name: "fred"}}
+// 	multiple := []dynamodb.Field{{Name: "fred"}, {Name: "harry"}, {Name: "norm"}}
+
+// 	// Setup test data
+// 	tests := []struct {
+// 		desc      string
+// 		fields    []dynamodb.Field
+// 		expectErr bool
+// 	}{
+// 		{"No fields", empty, true},
+// 		{"Empty field name", noName, true},
+// 		{"Single field", single, false},
+// 		{"Multiple fields", multiple, false},
+// 	}
+
+// 	// Iterate through the test data
+// 	for _, test := range tests {
+
+// 		t.Run(test.desc, func(t *testing.T) {
+
+// 			// Run the test
+// 			_, err := dynamodb.NewProjection(test.fields)
+// 			if test.expectErr {
+// 				internal.HasError(t, err)
+// 			} else {
+// 				internal.NoError(t, err)
+// 			}
+// 		})
+// 	}
+// }
