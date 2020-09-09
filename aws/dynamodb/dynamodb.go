@@ -139,40 +139,6 @@ func GetTableDetails(sess *session.Session, tableName string) (*dynamodb.Describ
 	return result, nil
 }
 
-// GetItems - retrieves matching items from the specified table
-func GetItems(sess *session.Session, tableName string, expr expression.Expression, castTo interface{}) error {
-
-	// Sanity check
-	if tableName == "" {
-		err := errors.New("Table name must be provided")
-		return err
-	}
-
-	// Create the DynamoDB client
-	svc := dynamodb.New(sess)
-
-	// Build the query params
-	params := &dynamodb.ScanInput{
-		ExpressionAttributeNames:  expr.Names(),
-		ExpressionAttributeValues: expr.Values(),
-		FilterExpression:          expr.Filter(),
-		ProjectionExpression:      expr.Projection(),
-		TableName:                 aws.String(tableName),
-	}
-
-	// Make the call to DynamoDB
-	result, err := svc.Scan(params)
-
-	// If not ok then bail
-	if err != nil {
-		return err
-	}
-
-	// Massage the result(s) & return
-	err = dynamodbattribute.UnmarshalListOfMaps(result.Items, &castTo)
-	return err
-}
-
 // GetTableList - retrieves a list of tables
 func GetTableList(sess *session.Session) ([]TableName, error) {
 
@@ -395,4 +361,38 @@ func newProjectionExpression(fields []Field) (expression.ProjectionBuilder, erro
 
 	// Return it
 	return projExpr, err
+}
+
+// ScanTable - scans the specified table to find matching items
+func ScanTable(sess *session.Session, tableName string, expr expression.Expression, castTo interface{}) error {
+
+	// Sanity check
+	if tableName == "" {
+		err := errors.New("Table name must be provided")
+		return err
+	}
+
+	// Create the DynamoDB client
+	svc := dynamodb.New(sess)
+
+	// Build the query params
+	params := &dynamodb.ScanInput{
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		FilterExpression:          expr.Filter(),
+		ProjectionExpression:      expr.Projection(),
+		TableName:                 aws.String(tableName),
+	}
+
+	// Make the call to DynamoDB
+	result, err := svc.Scan(params)
+
+	// If not ok then bail
+	if err != nil {
+		return err
+	}
+
+	// Massage the result(s) & return
+	err = dynamodbattribute.UnmarshalListOfMaps(result.Items, &castTo)
+	return err
 }

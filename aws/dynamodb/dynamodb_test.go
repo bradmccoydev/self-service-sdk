@@ -169,66 +169,6 @@ func TestGetTableList(t *testing.T) {
 	}
 }
 
-// Test GetItems
-func TestGetItems(t *testing.T) {
-
-	// Setup response structures
-	type ServiceItem struct {
-		Service       string `json:"service"`
-		Title         string `json:"title"`
-		Description   string `json:"description"`
-		Documentation string `json:"documentation"`
-		Type          string `json:"type"`
-	}
-	var response *[]ServiceItem
-
-	// Setup filter test data
-	invalidFilter := []dynamodb.Condition{{Field: "fred", Operator: "EQ", Value: "123"}}
-	validFilter := []dynamodb.Condition{{Field: "service", Operator: "EQ", Value: "123"}}
-
-	// Setup expression test data
-	var emptyExpression expression.Expression
-	invalidFilterExpr, _ := dynamodb.NewExpression(nil, invalidFilter, nil)
-	validFilterExpr, _ := dynamodb.NewExpression(nil, validFilter, nil)
-
-	// Setup test data
-	tests := []struct {
-		desc      string
-		validSess bool
-		tableName string
-		expr      expression.Expression
-		expectErr bool
-	}{
-		{"No inputs", false, "", emptyExpression, true},
-		{"Just session", true, "", emptyExpression, true},
-		{"Session & invalid table name", true, "fred", emptyExpression, true},
-		{"Session & valid table name", true, "service", emptyExpression, false},
-		{"Session, valid table name & invalid filter", true, "service", invalidFilterExpr, true},
-		{"Session, valid table name & valid filter", true, "service", validFilterExpr, false},
-	}
-
-	// Iterate through the test data
-	for _, test := range tests {
-
-		t.Run(test.desc, func(t *testing.T) {
-
-			// Run the test
-			var sess *session.Session
-			if test.validSess {
-				sess = internal.CreateAwsSession(true)
-			} else {
-				sess = internal.CreateAwsSession(false)
-			}
-			err := dynamodb.GetItems(sess, test.tableName, test.expr, &response)
-			if test.expectErr {
-				internal.HasError(t, err)
-			} else {
-				internal.NoError(t, err)
-			}
-		})
-	}
-}
-
 // Test NewExpression
 func TestNewExpression(t *testing.T) {
 
@@ -283,83 +223,62 @@ func TestNewExpression(t *testing.T) {
 	}
 }
 
-// // Test NewFilter
-// func TestNewFilter(t *testing.T) {
+// Test ScanTable
+func TestScanTable(t *testing.T) {
 
-// 	// Setup test data
-// 	tests := []struct {
-// 		desc      string
-// 		field     string
-// 		operator  string
-// 		value     string
-// 		expectErr bool
-// 	}{
-// 		{"No values", "", "", "", true},
-// 		{"Just a field", "fred", "", "", true},
-// 		{"Just an operator", "", "fred", "", true},
-// 		{"Just a value", "", "fred", "", true},
-// 		{"Invalid operator", "fred", "fred", "fred", true},
-// 		{"All valid - begins with", "fred", "BW", "fred", false},
-// 		{"All valid - contains", "fred", "CO", "fred", false},
-// 		{"All valid - equals", "fred", "EQ", "fred", false},
-// 		{"All valid - greater than", "fred", "GT", "fred", false},
-// 		{"All valid - greater than or equals", "fred", "GE", "fred", false},
-// 		{"All valid - in", "fred", "IN", "fred", false},
-// 		{"All valid - less than", "fred", "LT", "fred", false},
-// 		{"All valid - less than or equals", "fred", "LE", "fred", false},
-// 		{"All valid - not equals", "fred", "NE", "fred", false},
-// 	}
+	// Setup response structures
+	type ServiceItem struct {
+		Service       string `json:"service"`
+		Title         string `json:"title"`
+		Description   string `json:"description"`
+		Documentation string `json:"documentation"`
+		Type          string `json:"type"`
+	}
+	var response *[]ServiceItem
 
-// 	// Iterate through the test data
-// 	for _, test := range tests {
+	// Setup filter test data
+	invalidFilter := []dynamodb.Condition{{Field: "fred", Operator: "EQ", Value: "123"}}
+	validFilter := []dynamodb.Condition{{Field: "service", Operator: "EQ", Value: "123"}}
 
-// 		t.Run(test.desc, func(t *testing.T) {
+	// Setup expression test data
+	var emptyExpression expression.Expression
+	invalidFilterExpr, _ := dynamodb.NewExpression(nil, invalidFilter, nil)
+	validFilterExpr, _ := dynamodb.NewExpression(nil, validFilter, nil)
 
-// 			// Run the test
-// 			filters := []dynamodb.Filter{{test.field, test.operator, test.value}}
-// 			_, err := dynamodb.NewFilter(filters)
-// 			if test.expectErr {
-// 				internal.HasError(t, err)
-// 			} else {
-// 				internal.NoError(t, err)
-// 			}
-// 		})
-// 	}
-// }
+	// Setup test data
+	tests := []struct {
+		desc      string
+		validSess bool
+		tableName string
+		expr      expression.Expression
+		expectErr bool
+	}{
+		{"No inputs", false, "", emptyExpression, true},
+		{"Just session", true, "", emptyExpression, true},
+		{"Session & invalid table name", true, "fred", emptyExpression, true},
+		{"Session & valid table name", true, "service", emptyExpression, false},
+		{"Session, valid table name & invalid filter", true, "service", invalidFilterExpr, false},
+		{"Session, valid table name & valid filter", true, "service", validFilterExpr, false},
+	}
 
-// // Test NewProjection
-// func TestNewProjection(t *testing.T) {
+	// Iterate through the test data
+	for _, test := range tests {
 
-// 	// Setup field test data
-// 	var empty []dynamodb.Field
-// 	noName := []dynamodb.Field{{Name: ""}}
-// 	single := []dynamodb.Field{{Name: "fred"}}
-// 	multiple := []dynamodb.Field{{Name: "fred"}, {Name: "harry"}, {Name: "norm"}}
+		t.Run(test.desc, func(t *testing.T) {
 
-// 	// Setup test data
-// 	tests := []struct {
-// 		desc      string
-// 		fields    []dynamodb.Field
-// 		expectErr bool
-// 	}{
-// 		{"No fields", empty, true},
-// 		{"Empty field name", noName, true},
-// 		{"Single field", single, false},
-// 		{"Multiple fields", multiple, false},
-// 	}
-
-// 	// Iterate through the test data
-// 	for _, test := range tests {
-
-// 		t.Run(test.desc, func(t *testing.T) {
-
-// 			// Run the test
-// 			_, err := dynamodb.NewProjection(test.fields)
-// 			if test.expectErr {
-// 				internal.HasError(t, err)
-// 			} else {
-// 				internal.NoError(t, err)
-// 			}
-// 		})
-// 	}
-// }
+			// Run the test
+			var sess *session.Session
+			if test.validSess {
+				sess = internal.CreateAwsSession(true)
+			} else {
+				sess = internal.CreateAwsSession(false)
+			}
+			err := dynamodb.ScanTable(sess, test.tableName, test.expr, &response)
+			if test.expectErr {
+				internal.HasError(t, err)
+			} else {
+				internal.NoError(t, err)
+			}
+		})
+	}
+}
