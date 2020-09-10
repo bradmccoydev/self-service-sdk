@@ -4,9 +4,10 @@
 	the following tasks:
 		* retrieve a list of tables
 		* retrieve details about a specific table
-		* retrieve items from a table
-		* create a filter to retrict which table items are retrieved
+		* create a key condition expression to retrict which table items are retrieved
+		* create a filter to further retrict which table items are retrieved
 		* create a projection to retrict which table item fields are retrieved
+		* retrieve items from a table via a scan
 */
 package dynamodb
 
@@ -260,7 +261,7 @@ func newFilterExpression(filters []Condition) (expression.ConditionBuilder, erro
 		case NotEqual:
 			tmpcond = expression.Name(i.Field).NotEqual(expression.Value(i.Value))
 		default:
-			err = fmt.Errorf("Filter expressions do not support operator type: %s", i.Operator)
+			err = fmt.Errorf("Operator type %s is not supported by filter expressions", i.Operator)
 			return filterExpr, err
 		}
 
@@ -288,11 +289,11 @@ func newKeyExpression(conditions []Condition) (expression.KeyConditionBuilder, e
 
 		// Sanity check
 		if i.Field == "" {
-			err = errors.New("Field name must be provided for a key condition")
+			err = errors.New("Field name must be provided for a key condition expression")
 			return keyExpr, err
 		}
 		if i.Operator == "" {
-			err = errors.New("Operator must be provided for a key condition")
+			err = errors.New("Operator must be provided for a key condition expression")
 			return keyExpr, err
 		}
 
@@ -312,7 +313,7 @@ func newKeyExpression(conditions []Condition) (expression.KeyConditionBuilder, e
 		case LessThanOrEquals:
 			tmpcond = expression.Key(i.Field).LessThanEqual(expression.Value(i.Value))
 		default:
-			err = fmt.Errorf("Key conditions do not support operator type: %s", i.Operator)
+			err = fmt.Errorf("Operator type %s is not supported by key condition expressions", i.Operator)
 			return keyExpr, err
 		}
 
@@ -363,7 +364,46 @@ func newProjectionExpression(fields []Field) (expression.ProjectionBuilder, erro
 	return projExpr, err
 }
 
-// ScanTable - scans the specified table to find matching items
+// QueryTable - queries the specified table to find matching item(s)
+func QueryTable(sess *session.Session, tableName string, expr expression.Expression, castTo interface{}) error {
+
+	// Sanity check
+	if tableName == "" {
+		err := errors.New("Table name must be provided")
+		return err
+	}
+	if expr.KeyCondition() == nil {
+		err := errors.New("A key condition must be provided in the expression")
+		return err
+	}
+
+	// Create the DynamoDB client
+	svc := dynamodb.New(sess)
+
+	// Build the query params
+	params := &dynamodb.QueryInput{
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		FilterExpression:          expr.Filter(),
+		KeyConditionExpression:    expr.KeyCondition(),
+		ProjectionExpression:      expr.Projection(),
+		TableName:                 aws.String(tableName),
+	}
+
+	// Make the call to DynamoDB
+	result, err := svc.Query(params)
+
+	// If not ok then bail
+	if err != nil {
+		return err
+	}
+
+	// Massage the result(s) & return
+	err = dynamodbattribute.UnmarshalListOfMaps(result.Items, &castTo)
+	return err
+}
+
+// ScanTable - scans the specified table to find matching item(s)
 func ScanTable(sess *session.Session, tableName string, expr expression.Expression, castTo interface{}) error {
 
 	// Sanity check

@@ -12,6 +12,15 @@ import (
 	"github.com/bradmccoydev/self-service-sdk/internal"
 )
 
+// ServiceItem represents an item from the service table
+type ServiceItem struct {
+	Service       string `json:"service"`
+	Title         string `json:"title"`
+	Description   string `json:"description"`
+	Documentation string `json:"documentation"`
+	Type          string `json:"type"`
+}
+
 // Global variable for AWS credentials
 var AwsCreds internal.AwsCreds
 
@@ -197,7 +206,7 @@ func TestNewExpression(t *testing.T) {
 		projections []dynamodb.Field
 		expectErr   bool
 	}{
-		{"No inputs", noCond, noFilter, noProj, false},
+		{"No inputs", noCond, noFilter, noProj, true},
 		{"Empty inputs", emptyCond, emptyFilter, emptyProj, true},
 		{"Valid key condition", validCond, noFilter, noProj, false},
 		{"Valid key condition & empty filter", validCond, emptyFilter, emptyProj, true},
@@ -223,17 +232,69 @@ func TestNewExpression(t *testing.T) {
 	}
 }
 
+// Test QueryTable
+func TestQueryTable(t *testing.T) {
+
+	// Setup response array
+	var response *[]ServiceItem
+
+	// Setup key condition test data
+	var emptyKey []dynamodb.Condition
+	invalidKeyField := []dynamodb.Condition{{Field: "fred", Operator: "EQ", Value: "123"}}
+	invalidKeyVal := []dynamodb.Condition{{Field: "service", Operator: "EQ", Value: "123"}}
+	validKey := []dynamodb.Condition{{Field: "service", Operator: "EQ", Value: "123"}}
+
+	// Setup expression test data
+	var emptyExpression expression.Expression
+	emptyKeyExpr, _ := dynamodb.NewExpression(emptyKey, nil, nil)
+	invalidKeyFieldExpr, _ := dynamodb.NewExpression(invalidKeyField, nil, nil)
+	invalidKeyValueExpr, _ := dynamodb.NewExpression(invalidKeyVal, nil, nil)
+	validKeyExpr, _ := dynamodb.NewExpression(validKey, nil, nil)
+
+	// Setup test data
+	tests := []struct {
+		desc      string
+		validSess bool
+		tableName string
+		expr      expression.Expression
+		expectErr bool
+	}{
+		{"No inputs", false, "", emptyExpression, true},
+		{"Just session", true, "", emptyExpression, true},
+		{"Session & invalid table name", true, "fred", emptyExpression, true},
+		{"Session & valid table name", true, "service", emptyKeyExpr, true},
+		{"Session, valid table name & empty key", true, "service", emptyExpression, true},
+		{"Session, valid table name & invalid key field", true, "service", invalidKeyFieldExpr, true},
+		{"Session, valid table name & invalid key value", true, "service", invalidKeyValueExpr, false},
+		{"Session, valid table name & valid key", true, "service", validKeyExpr, false},
+	}
+
+	// Iterate through the test data
+	for _, test := range tests {
+
+		t.Run(test.desc, func(t *testing.T) {
+
+			// Run the test
+			var sess *session.Session
+			if test.validSess {
+				sess = internal.CreateAwsSession(true)
+			} else {
+				sess = internal.CreateAwsSession(false)
+			}
+			err := dynamodb.QueryTable(sess, test.tableName, test.expr, &response)
+			if test.expectErr {
+				internal.HasError(t, err)
+			} else {
+				internal.NoError(t, err)
+			}
+		})
+	}
+}
+
 // Test ScanTable
 func TestScanTable(t *testing.T) {
 
-	// Setup response structures
-	type ServiceItem struct {
-		Service       string `json:"service"`
-		Title         string `json:"title"`
-		Description   string `json:"description"`
-		Documentation string `json:"documentation"`
-		Type          string `json:"type"`
-	}
+	// Setup response array
 	var response *[]ServiceItem
 
 	// Setup filter test data
