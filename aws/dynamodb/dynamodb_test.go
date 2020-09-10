@@ -232,8 +232,8 @@ func TestNewExpression(t *testing.T) {
 	}
 }
 
-// Test QueryTable
-func TestQueryTable(t *testing.T) {
+// Test QueryItems
+func TestQueryItems(t *testing.T) {
 
 	// Setup response array
 	var response *[]ServiceItem
@@ -281,7 +281,7 @@ func TestQueryTable(t *testing.T) {
 			} else {
 				sess = internal.CreateAwsSession(false)
 			}
-			err := dynamodb.QueryTable(sess, test.tableName, test.expr, &response)
+			err := dynamodb.QueryItems(sess, test.tableName, test.expr, &response)
 			if test.expectErr {
 				internal.HasError(t, err)
 			} else {
@@ -291,8 +291,8 @@ func TestQueryTable(t *testing.T) {
 	}
 }
 
-// Test ScanTable
-func TestScanTable(t *testing.T) {
+// Test ScanItems
+func TestScanItems(t *testing.T) {
 
 	// Setup response array
 	var response *[]ServiceItem
@@ -334,7 +334,7 @@ func TestScanTable(t *testing.T) {
 			} else {
 				sess = internal.CreateAwsSession(false)
 			}
-			err := dynamodb.ScanTable(sess, test.tableName, test.expr, &response)
+			err := dynamodb.ScanItems(sess, test.tableName, test.expr, &response)
 			if test.expectErr {
 				internal.HasError(t, err)
 			} else {

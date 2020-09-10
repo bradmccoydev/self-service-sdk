@@ -1,7 +1,5 @@
-/*
-	Package logutil provides a framework for handling logging.
-	It is based on Zerolog (https://github.com/rs/zerolog).
-*/
+// Package logutil provides a framework for handling logging.
+// It is based on Zerolog (https://github.com/rs/zerolog).
 package logutil
 
 import (
@@ -17,20 +15,28 @@ import (
 const (
 	// TimeFormatUnix defines the Unix time format
 	TimeFormatUnix string = "UNIX"
+
 	// TimeFormatUnixMs defines the Unix milliseconds time format
 	TimeFormatUnixMs string = "UNIXMS"
+
 	// TimeFormatUnixMicro defines the Unix microseconds time format
 	TimeFormatUnixMicro string = "UNIXMICRO"
+
 	// LogLevelDebug defines the debug log level
 	LogLevelDebug string = "DEBUG"
+
 	// LogLevelError defines the error log level
 	LogLevelError string = "ERROR"
+
 	// LogLevelFatal defines the fatal log level
 	LogLevelFatal string = "FATAL"
+
 	// LogLevelInfo defines the info log level
 	LogLevelInfo string = "INFO"
+
 	// LogLevelTrace defines the trace log level
 	LogLevelTrace string = "TRACE"
+
 	// LogLevelWarn defines the warning log level
 	LogLevelWarn string = "WARN"
 )

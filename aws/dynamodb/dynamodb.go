@@ -1,14 +1,9 @@
-/*
-	Package dynamodb wrappers the AWS GoLang SDK packages
-	for DynamoDB to provide a simplified api to perform
-	the following tasks:
-		* retrieve a list of tables
-		* retrieve details about a specific table
-		* create a key condition expression to retrict which table items are retrieved
-		* create a filter to further retrict which table items are retrieved
-		* create a projection to retrict which table item fields are retrieved
-		* retrieve items from a table via a scan
-*/
+// Package dynamodb provides a simplified api to perform common
+// DynamoDB CRUD operations. It uses the following packages
+// from the AWS GoLang SDK:
+//  * dynamodb
+//  * dynamodb/dynamodbattribute
+//  * dynamodb/expression
 package dynamodb
 
 import (
@@ -24,37 +19,43 @@ import (
 )
 
 const (
+	// Between operator
+	Between string = "BT"
+
 	// BeginsWith operator
 	BeginsWith string = "BW"
+
 	// Contains operator
 	Contains string = "CO"
+
 	// Equals operator
 	Equals string = "EQ"
+
 	// GreaterThan operator
 	GreaterThan string = "GT"
+
 	// GreaterThanOrEquals operator
 	GreaterThanOrEquals string = "GE"
+
 	// In operator
 	In string = "IN"
+
 	// LessThan operator
 	LessThan string = "LT"
+
 	// LessThanOrEquals operator
 	LessThanOrEquals string = "LE"
+
 	// NotEqual operator
 	NotEqual string = "NE"
 )
 
-// TableName structure
-type TableName struct {
-	TableName string
-}
-
-// Field structure manages fields for a projection
+// Field - structure used to specify fields for a projection expression
 type Field struct {
 	Name string
 }
 
-// Condition structure is used for key condition & filter expressions
+// Condition - structure used for key condition & filter expressions
 type Condition struct {
 	Field    string
 	Operator string
@@ -62,15 +63,17 @@ type Condition struct {
 }
 
 // To Do:
-// Perform table scan
-// - with all options
-// - with just filter
-// - with just projection
-// Get a specific item
-// Update an item
+// Create an item
 // Delete an item
+// Update an item
 
-// GetTableArn - retrieves the ARN for the table
+// GetTableArn - retrieves the Amazon Resource Name (ARN) for the table
+//   Parameters:
+//     sess: a valid AWS session
+//     tableName: the name of the table to
+//
+//   Example:
+//     GetTableArn(mySession, "fred")
 func GetTableArn(sess *session.Session, tableName string) (*string, error) {
 
 	// Get the table details
@@ -92,7 +95,13 @@ func GetTableArn(sess *session.Session, tableName string) (*string, error) {
 	return arn, nil
 }
 
-// GetTableItemCount - retrieves the number of items
+// GetTableItemCount - retrieves the number of items in the table
+//   Parameters:
+//     sess: a valid AWS session
+//     tableName: the name of the table to
+//
+//   Example:
+//     GetTableArn(mySession, "fred")
 func GetTableItemCount(sess *session.Session, tableName string) (*int64, error) {
 
 	// Get the table details
@@ -114,7 +123,13 @@ func GetTableItemCount(sess *session.Session, tableName string) (*int64, error) 
 	return count, nil
 }
 
-// GetTableDetails - retrieves the details for a table
+// GetTableDetails - retrieves the metadata (ARN, item count, keys etc.) about a table
+//   Parameters:
+//     sess: a valid AWS session
+//     tableName: the name of the table to
+//
+//   Example:
+//     GetTableArn(mySession, "fred")
 func GetTableDetails(sess *session.Session, tableName string) (*dynamodb.DescribeTableOutput, error) {
 
 	// Sanity check
@@ -140,8 +155,13 @@ func GetTableDetails(sess *session.Session, tableName string) (*dynamodb.Describ
 	return result, nil
 }
 
-// GetTableList - retrieves a list of tables
-func GetTableList(sess *session.Session) ([]TableName, error) {
+// GetTableList - retrieves a list of available tables
+//   Parameters:
+//     sess: a valid AWS session
+//
+//   Example:
+//     GetTableArn(mySession")
+func GetTableList(sess *session.Session) ([]string, error) {
 
 	// Create the DynamoDB client
 	svc := dynamodb.New(sess)
@@ -156,11 +176,9 @@ func GetTableList(sess *session.Session) ([]TableName, error) {
 	}
 
 	// Populate array for returning
-	var response []TableName
+	var response []string
 	for _, i := range result.TableNames {
-		response = append(response, TableName{
-			*i,
-		})
+		response = append(response, *i)
 	}
 
 	// Return it
@@ -364,8 +382,48 @@ func newProjectionExpression(fields []Field) (expression.ProjectionBuilder, erro
 	return projExpr, err
 }
 
-// QueryTable - queries the specified table to find matching item(s)
-func QueryTable(sess *session.Session, tableName string, expr expression.Expression, castTo interface{}) error {
+// CreateItem - adds a new item to the specified table
+func CreateItem(sess *session.Session, tableName string, expr expression.Expression, newItem interface{}) error {
+
+	// Sanity check
+	if tableName == "" {
+		err := errors.New("Table name must be provided")
+		return err
+	}
+	if expr.KeyCondition() == nil {
+		err := errors.New("A key condition must be provided in the expression")
+		return err
+	}
+
+	// Create the DynamoDB client
+	//svc := dynamodb.New(sess)
+
+	// // Build the query params
+	// params := &dynamodb.QueryInput{
+	// 	ExpressionAttributeNames:  expr.Names(),
+	// 	ExpressionAttributeValues: expr.Values(),
+	// 	FilterExpression:          expr.Filter(),
+	// 	KeyConditionExpression:    expr.KeyCondition(),
+	// 	ProjectionExpression:      expr.Projection(),
+	// 	TableName:                 aws.String(tableName),
+	// }
+
+	// // Make the call to DynamoDB
+	// result, err := svc.Query(params)
+
+	// // If not ok then bail
+	// if err != nil {
+	// 	return err
+	// }
+
+	// // Massage the result(s) & return
+	// //err = dynamodbattribute.UnmarshalListOfMaps(result.Items, &castTo)
+	// return err
+	return nil
+}
+
+// QueryItems - queries the specified table to find matching item(s)
+func QueryItems(sess *session.Session, tableName string, expr expression.Expression, castTo interface{}) error {
 
 	// Sanity check
 	if tableName == "" {
@@ -403,8 +461,8 @@ func QueryTable(sess *session.Session, tableName string, expr expression.Express
 	return err
 }
 
-// ScanTable - scans the specified table to find matching item(s)
-func ScanTable(sess *session.Session, tableName string, expr expression.Expression, castTo interface{}) error {
+// ScanItems - scans the specified table to find matching item(s)
+func ScanItems(sess *session.Session, tableName string, expr expression.Expression, castTo interface{}) error {
 
 	// Sanity check
 	if tableName == "" {

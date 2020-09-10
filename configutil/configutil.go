@@ -1,8 +1,6 @@
-/*
-	Package configutil provides a framework for handling configuration parameters.
-	It is based on Viper (https://github.com/spf13/viper) and supports setting of
-	configuration parameters from a file &/or environment variables.
-*/
+// Package configutil provides a framework for handling configuration parameters.
+// It is based on Viper (https://github.com/spf13/viper) and supports setting of
+// configuration parameters from a file &/or environment variables.
 package configutil
 
 import (
