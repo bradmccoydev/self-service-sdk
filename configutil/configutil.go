@@ -17,61 +17,20 @@ const (
 	configTypeYAML string = "YAML"
 )
 
-// ConfigFile represents the metadata for a configuration file
-type ConfigFile struct {
-	Name string
-	Path string
-	Type string
-}
-
-// DefaultValue represents a default configuration value
+// DefaultValue - structure to represent the metadata for a configuration default value
 type DefaultValue struct {
 	ConfigKey   string
 	ConfigValue string
 }
 
-// EnvVariable represents an environment variable and
+// EnvVariable - structure to represent an environment variable and
 // the target configuration key to place the value
 type EnvVariable struct {
 	EnvVar    string
 	ConfigKey string
 }
 
-// CreateConfFileDef creates a new configuration file instance
-// that can then be used to instantiate a configuration manager.
-//
-// Example:
-//
-//     // Create a config file instance
-//     svc := configutil.CreateConfFileDef(fileName, fileType, filePath)
-func CreateConfFileDef(fileName string, fileType string, filePath string) (ConfigFile, error) {
-
-	// Sanity checks
-	var conf ConfigFile
-	var err error = nil
-	if fileName == "" {
-		err = errors.New("File name must be provided")
-		return conf, err
-	}
-	if fileType == "" {
-		err = errors.New("File type must be provided")
-		return conf, err
-	}
-	switch strings.ToUpper(fileType) {
-	case configTypeJSON, configTypeTOML, configTypeYAML:
-		// These are ok....
-	default:
-		err = fmt.Errorf("Unsupported configuration file type: %s", fileType)
-		return conf, err
-	}
-
-	// Return the configuration object
-	conf.Name = fileName
-	conf.Path = filePath
-	conf.Type = fileType
-	return conf, err
-}
-
+// Load default values into the configuration
 func loadDefaults(config *viper.Viper, defaults []DefaultValue) error {
 
 	// Iterate through each k/v default value
@@ -85,13 +44,13 @@ func loadDefaults(config *viper.Viper, defaults []DefaultValue) error {
 	return nil
 }
 
-// NewConfig creates a new basic instance of the
-// configuration manager.
+// NewConfig - This function creates a new basic instance of a config manager.
 //
-// Example:
+//   Parameters:
+//     defaults: an array of key/value default values
 //
-//     // Create an empty config manager instance
-//     svc := configutil.NewConfig(defaults)
+//   Example:
+//     cfg := configutil.NewConfig(defaults)
 func NewConfig(defaults []DefaultValue) (*viper.Viper, error) {
 
 	// Instantiate Viper
@@ -107,13 +66,15 @@ func NewConfig(defaults []DefaultValue) (*viper.Viper, error) {
 	return vCfg, err
 }
 
-// NewConfigFromEnv creates a new instance of the
-// configuration manager using environment variable(s)
+// NewConfigFromEnv - This function creates a new instance of the
+// config manager and loads in the specified environment variable(s)
 //
-// Example:
+//   Parameters:
+//     defaults: an array of key/value default values
+//     envVars: an array of environment variables to load
 //
-//     // Create an empty config manager instance
-//     svc := configutil.NewConfigFromEnv(defaults, envVars)
+//   Example:
+//     cfg := configutil.NewConfig(defaults, envVars)
 func NewConfigFromEnv(defaults []DefaultValue, envVars []EnvVariable) (*viper.Viper, error) {
 
 	// Instantiate Viper
@@ -154,20 +115,41 @@ func NewConfigFromEnv(defaults []DefaultValue, envVars []EnvVariable) (*viper.Vi
 	return vCfg, err
 }
 
-// NewConfigFromFile creates a new instance of the
+// NewConfigFromFile - This function creates a new instance of the
 // configuration manager using a config file
 //
-// Example:
+//   Parameters:
+//     defaults: an array of key/value default values
+//     fileName: the name of the config file to load
+//     fileType: the type (JSON, TOML, YAML) of the config file
+//     filePath: the path to the config file
 //
-//     // Create an empty config manager instance
-//     svc := configutil.NewConfigFromFile(defaults, configfile)
-func NewConfigFromFile(defaults []DefaultValue, configfile ConfigFile) (*viper.Viper, error) {
+//   Example:
+//     cfg := configutil.NewConfig(defaults, "fred", "yaml", "/tmp")
+func NewConfigFromFile(defaults []DefaultValue, fileName string, fileType string, filePath string) (*viper.Viper, error) {
+
+	// Sanity checks
+	var err error = nil
+	if fileName == "" {
+		err = errors.New("File name must be provided")
+		return nil, err
+	}
+	if fileType == "" {
+		err = errors.New("File type must be provided")
+		return nil, err
+	}
+	switch strings.ToUpper(fileType) {
+	case configTypeJSON, configTypeTOML, configTypeYAML:
+		// These are ok....
+	default:
+		err = fmt.Errorf("Unsupported configuration file type: %s", fileType)
+		return nil, err
+	}
 
 	// Instantiate Viper
 	vCfg := viper.New()
 
 	// Handle any default values
-	var err error = nil
 	if len(defaults) > 0 {
 		err = loadDefaults(vCfg, defaults)
 		if err != nil {
@@ -176,9 +158,10 @@ func NewConfigFromFile(defaults []DefaultValue, configfile ConfigFile) (*viper.V
 	}
 
 	// Try & load the config file
-	vCfg.SetConfigName(configfile.Name)
-	vCfg.SetConfigType(configfile.Type)
-	vCfg.AddConfigPath(configfile.Path)
+	typeLower := strings.ToLower(fileType)
+	vCfg.SetConfigName(fileName)
+	vCfg.SetConfigType(typeLower)
+	vCfg.AddConfigPath(filePath)
 	err = vCfg.ReadInConfig()
 
 	// Return the configuration object

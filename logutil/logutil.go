@@ -3,8 +3,6 @@
 package logutil
 
 import (
-	"errors"
-	"fmt"
 	"os"
 	"strings"
 
@@ -41,75 +39,9 @@ const (
 	LogLevelWarn string = "WARN"
 )
 
-// LogConfig structure represents the logging
-// configuration to be used
-type LogConfig struct {
-	TimeFieldFormat string
-	GlobalLogLevel  zerolog.Level
-	LogToConsole    bool
-}
-
-// CreateLogConfDef creates a new logging configuration instance
-// that can then be used to instantiate a logging manager.
-//
-// Example:
-//
-//     // Create a config file instance
-//     conf := logutil.CreateLogConfDef(timeFormat, logLevel, logToConsole)
-func CreateLogConfDef(timeFormat string, logLevel string, logToConsole bool) (LogConfig, error) {
-
-	// Validate time format
-	var conf LogConfig
-	var err error = nil
-	if timeFormat == "" {
-		err = errors.New("Time format must be provided")
-		return conf, err
-	}
-	switch strings.ToUpper(timeFormat) {
-	case TimeFormatUnix:
-		conf.TimeFieldFormat = zerolog.TimeFormatUnix
-	case TimeFormatUnixMs:
-		conf.TimeFieldFormat = zerolog.TimeFormatUnixMs
-	case TimeFormatUnixMicro:
-		conf.TimeFieldFormat = zerolog.TimeFormatUnixMicro
-	default:
-		err = fmt.Errorf("Unsupported time format: %s", timeFormat)
-		return conf, err
-	}
-
-	// Validate log level
-	if logLevel == "" {
-		err = errors.New("Log level must be provided")
-		return conf, err
-	}
-	switch strings.ToUpper(logLevel) {
-	case LogLevelDebug:
-		conf.GlobalLogLevel = zerolog.DebugLevel
-	case LogLevelError:
-		conf.GlobalLogLevel = zerolog.ErrorLevel
-	case LogLevelFatal:
-		conf.GlobalLogLevel = zerolog.FatalLevel
-	case LogLevelInfo:
-		conf.GlobalLogLevel = zerolog.InfoLevel
-	case LogLevelTrace:
-		conf.GlobalLogLevel = zerolog.TraceLevel
-	case LogLevelWarn:
-		conf.GlobalLogLevel = zerolog.WarnLevel
-	default:
-		err = fmt.Errorf("Unsupported log level: %s", logLevel)
-		return conf, err
-	}
-
-	// Return the configuration object
-	conf.LogToConsole = logToConsole
-	return conf, err
-}
-
 // LogDebug creates a new debug level log entry
 //
-// Example:
-//
-//     // Log a message at debug level
+//   Example:
 //     logutil.LogLogDebug(msg)
 func LogDebug(msg string) {
 	log.Debug().Msg(msg)
@@ -117,9 +49,7 @@ func LogDebug(msg string) {
 
 // LogError creates a new error level log entry
 //
-// Example:
-//
-//     // Log a message at error level
+//   Example:
 //     logutil.LogError(msg)
 func LogError(msg string) {
 	log.Error().Msg(msg)
@@ -127,9 +57,7 @@ func LogError(msg string) {
 
 // LogFatal creates a new fatal level log entry
 //
-// Example:
-//
-//     // Log a message at error level
+//   Example:
 //     logutil.LogFatal(msg)
 func LogFatal(msg string) {
 	log.Fatal().Msg(msg)
@@ -137,9 +65,7 @@ func LogFatal(msg string) {
 
 // LogInfo creates a new info level log entry
 //
-// Example:
-//
-//     // Log a message at info level
+//   Example:
 //     logutil.LogInfo(msg)
 func LogInfo(msg string) {
 	log.Info().Msg(msg)
@@ -147,9 +73,7 @@ func LogInfo(msg string) {
 
 // LogTrace creates a new trace level log entry
 //
-// Example:
-//
-//     // Log a message at trace level
+//   Example:
 //     logutil.LogTrace(msg)
 func LogTrace(msg string) {
 	log.Trace().Msg(msg)
@@ -157,48 +81,60 @@ func LogTrace(msg string) {
 
 // LogWarn creates a new warning level log entry
 //
-// Example:
-//
-//     // Log a message at warning level
+//   Example:
 //     logutil.LogWarn(msg)
 func LogWarn(msg string) {
 	log.Warn().Msg(msg)
 }
 
-// New creates a new logger with the default configuration
+// New - This function creates a new logger
 //
-// Example:
+//   Parameters:
+//     timeFormat: the format to use for the log timestamps. Defaults to UNIX
+//     logLevel: the logging level (ie log messages must be a higher level to be written). Defaults to INFO
+//     logToConsole: not currently implemented
 //
-//     // Create a new logger
-//     logutil.New()
-func New() {
+//   Example:
+//     logutil.New("UNIXMS", "INFO", false)
+func New(timeFormat string, logLevel string, logToConsole bool) {
 
-	// Create using defaults
-	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
-	zerolog.SetGlobalLevel(zerolog.InfoLevel)
-	log.Logger = zerolog.New(os.Stdout).With().Timestamp().Logger()
-}
-
-// NewWithConfig creates a new logger with custom configuration
-//
-// Example:
-//
-//     // Create a new logger
-//     logutil.NewWithConfig(config)
-func NewWithConfig(config LogConfig) {
-
-	// Set time format
-	if config.TimeFieldFormat == "" {
+	// Handle time format
+	switch strings.ToUpper(timeFormat) {
+	case TimeFormatUnix:
 		zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
-	} else {
-		zerolog.TimeFieldFormat = config.TimeFieldFormat
+	case TimeFormatUnixMs:
+		zerolog.TimeFieldFormat = zerolog.TimeFormatUnixMs
+	case TimeFormatUnixMicro:
+		zerolog.TimeFieldFormat = zerolog.TimeFormatUnixMicro
+	default:
+		// Unknown format - so we default
+		zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	}
 
-	// Set global log level
-	zerolog.SetGlobalLevel(config.GlobalLogLevel)
+	// Handle log level
+	if logLevel == "" {
+		logLevel = LogLevelInfo
+	}
+	switch strings.ToUpper(logLevel) {
+	case LogLevelDebug:
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	case LogLevelError:
+		zerolog.SetGlobalLevel(zerolog.ErrorLevel)
+	case LogLevelFatal:
+		zerolog.SetGlobalLevel(zerolog.FatalLevel)
+	case LogLevelInfo:
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	case LogLevelTrace:
+		zerolog.SetGlobalLevel(zerolog.TraceLevel)
+	case LogLevelWarn:
+		zerolog.SetGlobalLevel(zerolog.WarnLevel)
+	default:
+		// Unknown log level - so we default
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	}
 
 	// Set log output
-	if config.LogToConsole == false {
+	if logToConsole == false {
 		log.Logger = zerolog.New(os.Stdout).With().Timestamp().Logger()
 	} else {
 		log.Logger = zerolog.New(os.Stdout).With().Timestamp().Logger()

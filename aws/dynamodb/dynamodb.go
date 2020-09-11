@@ -1,9 +1,12 @@
 // Package dynamodb provides a simplified api to perform common
-// DynamoDB CRUD operations. It uses the following packages
-// from the AWS GoLang SDK:
-//  * dynamodb
-//  * dynamodb/dynamodbattribute
-//  * dynamodb/expression
+// DynamoDB CRUD operations.
+//
+//   The following AWS GoLang SDK packages are used:
+//     * aws
+//     * aws/session
+//     * service/dynamodb
+//     * service/dynamodb/dynamodbattribute
+//     * service/dynamodb/expression
 package dynamodb
 
 import (
@@ -67,7 +70,8 @@ type Condition struct {
 // Delete an item
 // Update an item
 
-// GetTableArn - retrieves the Amazon Resource Name (ARN) for the table
+// GetTableArn - This function retrieves the Amazon Resource Name (ARN) for the table
+//
 //   Parameters:
 //     sess: a valid AWS session
 //     tableName: the name of the table to
@@ -95,7 +99,8 @@ func GetTableArn(sess *session.Session, tableName string) (*string, error) {
 	return arn, nil
 }
 
-// GetTableItemCount - retrieves the number of items in the table
+// GetTableItemCount - This function retrieves the number of items in the table
+//
 //   Parameters:
 //     sess: a valid AWS session
 //     tableName: the name of the table to
@@ -123,7 +128,8 @@ func GetTableItemCount(sess *session.Session, tableName string) (*int64, error) 
 	return count, nil
 }
 
-// GetTableDetails - retrieves the metadata (ARN, item count, keys etc.) about a table
+// GetTableDetails - This function retrieves all the metadata (ARN, item count, keys etc.) about a table
+//
 //   Parameters:
 //     sess: a valid AWS session
 //     tableName: the name of the table to
@@ -155,12 +161,13 @@ func GetTableDetails(sess *session.Session, tableName string) (*dynamodb.Describ
 	return result, nil
 }
 
-// GetTableList - retrieves a list of available tables
+// GetTableList - This function retrieves a list of available tables
+//
 //   Parameters:
 //     sess: a valid AWS session
 //
 //   Example:
-//     GetTableArn(mySession")
+//     GetTableArn(mySession)
 func GetTableList(sess *session.Session) ([]string, error) {
 
 	// Create the DynamoDB client
@@ -185,7 +192,15 @@ func GetTableList(sess *session.Session) ([]string, error) {
 	return response, nil
 }
 
-// NewExpression creates a new query expression object
+// NewExpression - This function creates a new query expression object
+//
+//   Parameters:
+//     keys: an array of key condition(s)
+//     filters: an array of filter condition(s)
+//     projs: an array of field(s)
+//
+//   Example:
+//     NewExpression(keys, filters, projs)
 func NewExpression(keys []Condition, filters []Condition, projs []Field) (expression.Expression, error) {
 
 	// Create new query expression
@@ -238,7 +253,7 @@ func NewExpression(keys []Condition, filters []Condition, projs []Field) (expres
 	return expr, err
 }
 
-// newFilterExpression creates a filter expression for use with a scan call
+// newFilterExpression creates a filter expression for use with a query or scan call
 func newFilterExpression(filters []Condition) (expression.ConditionBuilder, error) {
 
 	// Iterate records provided
@@ -382,7 +397,16 @@ func newProjectionExpression(fields []Field) (expression.ProjectionBuilder, erro
 	return projExpr, err
 }
 
-// CreateItem - adds a new item to the specified table
+// CreateItem - This function adds a new item to the specified table
+//
+//   Parameters:
+//     sess: a valid AWS session
+//     tableName: the name of the table to add the item to
+//     expr: the expression object to use
+//     newItem: the structure containing the new item properties
+//
+//   Example:
+//     CreateItem(mySession, "fred", expr, myStruct)
 func CreateItem(sess *session.Session, tableName string, expr expression.Expression, newItem interface{}) error {
 
 	// Sanity check
@@ -422,7 +446,16 @@ func CreateItem(sess *session.Session, tableName string, expr expression.Express
 	return nil
 }
 
-// QueryItems - queries the specified table to find matching item(s)
+// QueryItems - This function makes a query call of the specified table to find matching item(s)
+//
+//   Parameters:
+//     sess: a valid AWS session
+//     tableName: the name of the table to query
+//     expr: the expression object to use
+//     castTo: the array definition that results should be returned in
+//
+//   Example:
+//     QueryItems(mySession, "fred", expr, myArray)
 func QueryItems(sess *session.Session, tableName string, expr expression.Expression, castTo interface{}) error {
 
 	// Sanity check
@@ -461,7 +494,16 @@ func QueryItems(sess *session.Session, tableName string, expr expression.Express
 	return err
 }
 
-// ScanItems - scans the specified table to find matching item(s)
+// ScanItems - This function makes a scan call of the specified table to find matching item(s)
+//
+//   Parameters:
+//     sess: a valid AWS session
+//     tableName: the name of the table to scan
+//     expr: the expression object to use
+//     castTo: the array definition that results should be returned in
+//
+//   Example:
+//     ScanItems(mySession, "fred", expr, myArray)
 func ScanItems(sess *session.Session, tableName string, expr expression.Expression, castTo interface{}) error {
 
 	// Sanity check

@@ -1,3 +1,9 @@
+// Package auth provides a simplified api to perform common
+// AWS authentication operations.
+//
+//   The following AWS GoLang SDK packages are used:
+//     * aws
+//     * aws/session
 package auth
 
 import (
@@ -5,38 +11,32 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 )
 
-// NewSession creates an AWS session using the defaults
+// NewSession - This function creates an AWS session using the defaults
 //
-// Example:
-//
-//     // Create a new session using the defaults
-//     sess := session.NewSession()
+//   Example:
+//     sess, err := session.NewSession()
 func NewSession() (*session.Session, error) {
 
 	sess, err := session.NewSession()
 	return sess, err
 }
 
-// NewSessionWithConfig creates an AWS session
+// NewSessionWithConfig - This function creates an AWS session
 // using the provided configuration
 //
-// Example:
-//
-//     // Create a new session using the provided config
-//     sess := session.NewSessionWithConfig()
+//   Example:
+//     sess, err := session.NewSessionWithConfig(awsConf)
 func NewSessionWithConfig(conf aws.Config) (*session.Session, error) {
 
 	sess, err := session.NewSession(&conf)
 	return sess, err
 }
 
-// NewSessionWithOptions creates an AWS session
+// NewSessionWithOptions - This function creates an AWS session
 // using the provided options
 //
-// Example:
-//
-//     // Create a new session using the provided options
-//     sess := session.NewSessionWithOptions(options)
+//   Example:
+//     sess, err := session.NewSessionWithOptions(options)
 func NewSessionWithOptions(opts session.Options) (*session.Session, error) {
 
 	sess, err := session.NewSessionWithOptions(opts)

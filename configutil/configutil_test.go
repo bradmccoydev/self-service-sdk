@@ -19,41 +19,6 @@ func manageTestEnvVar(t *testing.T) func(t *testing.T) {
 	}
 }
 
-// Test CreateConfFileDef
-func TestCreateConfFileDef(t *testing.T) {
-
-	// Setup test data
-	var tests = []struct {
-		desc        string
-		fileName    string
-		fileType    string
-		filePath    string
-		expectErr   bool
-		expectedVal string
-	}{
-		{"No values", "", "", "", true, ""},
-		{"Just fileName", "fred", "", "", true, ""},
-		{"With fileName & filePath", "fred", "", "fred", true, ""},
-		{"With all - invalid fileType", "fred", "fred", "fred", true, ""},
-		{"With all - valid fileType", "fred", "json", "fred", false, ""},
-	}
-
-	// Iterate through the test data
-	for _, test := range tests {
-
-		t.Run(test.desc, func(t *testing.T) {
-
-			// Run the test
-			_, err := configutil.CreateConfFileDef(test.fileName, test.fileType, test.filePath)
-			if test.expectErr {
-				internal.HasError(t, err)
-			} else {
-				internal.NoError(t, err)
-			}
-		})
-	}
-}
-
 // Test NewConfig
 func TestNewConfig(t *testing.T) {
 
@@ -223,31 +188,28 @@ func TestNewConfigFromFile(t *testing.T) {
 		ConfigValue: "",
 	}}
 
-	// Setup test config file values
-	var emptyConfFile configutil.ConfigFile
-	validConfFile, _ := configutil.CreateConfFileDef("testdata", "yaml", ".")
-	missingConfFile, _ := configutil.CreateConfFileDef("testdata2", "yaml", ".")
-	invalidConfFileType, _ := configutil.CreateConfFileDef("testdata", "json", ".")
-
 	// Setup test data
 	var tests = []struct {
 		desc             string
 		defaults         []configutil.DefaultValue
-		confFile         configutil.ConfigFile
+		confFile         string
+		confType         string
+		confPath         string
 		expectErr        bool
 		configKeyToCheck string
 		expectedVal      string
 	}{
-		{"No values", nil, emptyConfFile, true, "", ""},
-		{"Default config with no key", noKeyDefault, emptyConfFile, true, "", ""},
-		{"Default config with empty key", emptyKeyDefault, emptyConfFile, true, "", ""},
-		{"Default config with no value", noValueDefault, validConfFile, false, "configKey", ""},
-		{"Default config with empty value", emptyValueDefault, validConfFile, false, "configKey", ""},
-		{"Valid default config with empty config file", validDefault, emptyConfFile, true, "", ""},
-		{"Valid default config with missing config file", validDefault, missingConfFile, true, "", ""},
-		{"Valid default config with invalid config file type", validDefault, invalidConfFileType, true, "", ""},
-		{"Valid call", validDefault, validConfFile, false, "configKey", "configVal"},
-		{"Valid call", validDefault, validConfFile, false, "metadata.labels.test", "not-default"},
+		{"No values", nil, "", "", "", true, "", ""},
+		{"Valid default config with config file name", validDefault, "fred", "", "", true, "", ""},
+		{"Valid default config with config file type", validDefault, "", "TOML", "", true, "", ""},
+		{"Valid default config with config file path", validDefault, "", "", "/tmp", true, "", ""},
+		{"Valid default config with config file name & type", validDefault, "testdata", "YAML", "", true, "", ""},
+		{"Default config with no key", noKeyDefault, "testdata", "YAML", ".", true, "", ""},
+		{"Default config with empty key", emptyKeyDefault, "testdata", "YAML", ".", true, "", ""},
+		{"Default config with no value", noValueDefault, "testdata", "YAML", ".", false, "configKey", ""},
+		{"Default config with empty value", emptyValueDefault, "testdata", "YAML", ".", false, "configKey", ""},
+		{"Valid call", validDefault, "testdata", "YAML", ".", false, "configKey", "configVal"},
+		{"Valid call", validDefault, "testdata", "YAML", ".", false, "metadata.labels.test", "not-default"},
 	}
 
 	// Iterate through the test data
@@ -256,7 +218,7 @@ func TestNewConfigFromFile(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 
 			// Run the test
-			obj, err := configutil.NewConfigFromFile(test.defaults, test.confFile)
+			obj, err := configutil.NewConfigFromFile(test.defaults, test.confFile, test.confType, test.confPath)
 			if test.expectErr {
 				internal.HasError(t, err)
 			} else {
