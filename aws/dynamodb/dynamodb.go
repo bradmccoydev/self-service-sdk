@@ -135,7 +135,7 @@ func GetTableItemCount(sess *session.Session, tableName string) (*int64, error) 
 //     tableName: the name of the table to
 //
 //   Example:
-//     GetTableArn(mySession, "fred")
+//     arn, err := GetTableArn(mySession, "fred")
 func GetTableDetails(sess *session.Session, tableName string) (*dynamodb.DescribeTableOutput, error) {
 
 	// Sanity check
@@ -167,7 +167,7 @@ func GetTableDetails(sess *session.Session, tableName string) (*dynamodb.Describ
 //     sess: a valid AWS session
 //
 //   Example:
-//     GetTableArn(mySession)
+//     tables, err := GetTableArn(mySession)
 func GetTableList(sess *session.Session) ([]string, error) {
 
 	// Create the DynamoDB client
@@ -200,7 +200,7 @@ func GetTableList(sess *session.Session) ([]string, error) {
 //     projs: an array of field(s)
 //
 //   Example:
-//     NewExpression(keys, filters, projs)
+//     expr, err := NewExpression(keys, filters, projs)
 func NewExpression(keys []Condition, filters []Condition, projs []Field) (expression.Expression, error) {
 
 	// Create new query expression
@@ -402,48 +402,40 @@ func newProjectionExpression(fields []Field) (expression.ProjectionBuilder, erro
 //   Parameters:
 //     sess: a valid AWS session
 //     tableName: the name of the table to add the item to
-//     expr: the expression object to use
-//     newItem: the structure containing the new item properties
+//     input: the structure containing the new item properties
 //
 //   Example:
-//     CreateItem(mySession, "fred", expr, myStruct)
-func CreateItem(sess *session.Session, tableName string, expr expression.Expression, newItem interface{}) error {
+//     err := CreateItem(mySession, "fred", myStruct)
+func CreateItem(sess *session.Session, tableName string, input interface{}) error {
 
 	// Sanity check
 	if tableName == "" {
 		err := errors.New("Table name must be provided")
 		return err
 	}
-	if expr.KeyCondition() == nil {
-		err := errors.New("A key condition must be provided in the expression")
+
+	// Create the DynamoDB client
+	svc := dynamodb.New(sess)
+
+	// Marshall the input
+	item, err := dynamodbattribute.MarshalMap(&input)
+
+	// If not ok then bail
+	if err != nil {
 		return err
 	}
 
-	// Create the DynamoDB client
-	//svc := dynamodb.New(sess)
+	// Build the input params
+	params := &dynamodb.PutItemInput{
+		Item:      item,
+		TableName: aws.String(tableName),
+	}
 
-	// // Build the query params
-	// params := &dynamodb.QueryInput{
-	// 	ExpressionAttributeNames:  expr.Names(),
-	// 	ExpressionAttributeValues: expr.Values(),
-	// 	FilterExpression:          expr.Filter(),
-	// 	KeyConditionExpression:    expr.KeyCondition(),
-	// 	ProjectionExpression:      expr.Projection(),
-	// 	TableName:                 aws.String(tableName),
-	// }
+	// Make the call to DynamoDB
+	_, err = svc.PutItem(params)
 
-	// // Make the call to DynamoDB
-	// result, err := svc.Query(params)
-
-	// // If not ok then bail
-	// if err != nil {
-	// 	return err
-	// }
-
-	// // Massage the result(s) & return
-	// //err = dynamodbattribute.UnmarshalListOfMaps(result.Items, &castTo)
-	// return err
-	return nil
+	// Return
+	return err
 }
 
 // QueryItems - This function makes a query call of the specified table to find matching item(s)
@@ -452,11 +444,11 @@ func CreateItem(sess *session.Session, tableName string, expr expression.Express
 //     sess: a valid AWS session
 //     tableName: the name of the table to query
 //     expr: the expression object to use
-//     castTo: the array definition that results should be returned in
+//     response: the array definition that the results should be returned in
 //
 //   Example:
-//     QueryItems(mySession, "fred", expr, myArray)
-func QueryItems(sess *session.Session, tableName string, expr expression.Expression, castTo interface{}) error {
+//     err := QueryItems(mySession, "fred", expr, myArray)
+func QueryItems(sess *session.Session, tableName string, expr expression.Expression, response interface{}) error {
 
 	// Sanity check
 	if tableName == "" {
@@ -490,7 +482,7 @@ func QueryItems(sess *session.Session, tableName string, expr expression.Express
 	}
 
 	// Massage the result(s) & return
-	err = dynamodbattribute.UnmarshalListOfMaps(result.Items, &castTo)
+	err = dynamodbattribute.UnmarshalListOfMaps(result.Items, &response)
 	return err
 }
 
@@ -500,11 +492,11 @@ func QueryItems(sess *session.Session, tableName string, expr expression.Express
 //     sess: a valid AWS session
 //     tableName: the name of the table to scan
 //     expr: the expression object to use
-//     castTo: the array definition that results should be returned in
+//     response: the array definition that results should be returned in
 //
 //   Example:
-//     ScanItems(mySession, "fred", expr, myArray)
-func ScanItems(sess *session.Session, tableName string, expr expression.Expression, castTo interface{}) error {
+//     err := ScanItems(mySession, "fred", expr, myArray)
+func ScanItems(sess *session.Session, tableName string, expr expression.Expression, response interface{}) error {
 
 	// Sanity check
 	if tableName == "" {
@@ -533,6 +525,6 @@ func ScanItems(sess *session.Session, tableName string, expr expression.Expressi
 	}
 
 	// Massage the result(s) & return
-	err = dynamodbattribute.UnmarshalListOfMaps(result.Items, &castTo)
+	err = dynamodbattribute.UnmarshalListOfMaps(result.Items, &response)
 	return err
 }
