@@ -3,6 +3,20 @@
 This repository contains the SDK for Self Service. It is provided as a GoLang module.
 
 
+## Repository Structure
+
+The table below explains the layout of this repository.
+
+| Directory | Purpose |
+| :---: | :--- |
+| /aws | This directory contains AWS related SDK packages |
+| /azure | This directory contains Azure related SDK packages |
+| /configutil | This directory contains the configuration utility package |
+| /internal | This directory contains utility functions for internal testing etc |
+| /logutil | This directory contains the logging utility package |
+| /templates | This directory contains templates for using the SDK |
+
+
 ## Requirements
 
 The table below lists the requirements to use the SDK.
