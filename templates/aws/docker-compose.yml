@@ -1,0 +1,67 @@
+#############################################################
+#
+# The following Docker Compose file manages building the
+# microservice and deploying it to AWS. 
+#
+#############################################################
+version: "3"
+services:
+  deploy:
+    build:
+      context: ./
+      dockerfile: ./docker/Dockerfile
+    image: selfservice
+    container_name: selfservice
+    stdin_open: true
+    tty: true
+    volumes:
+
+#####
+#
+# The following mount is used to expose the inputs script.
+# This shouldn' be changed unless you know what you're doing!
+#
+#####
+      - ./work:/tmp/work
+
+#####
+#
+# The following mount is used to expose the microservice source code.
+# Change the mount point to the source folder on your pc.
+#
+#####
+      - ./example:/tmp/source
+
+#####
+#
+# The following is used to make your AWS credentials available
+# to deploy the microservice to AWS. You need to choose one option.
+# You can either:
+#
+#    1) Directly expose the credentials file via a mount
+#    2) Expose the credentials via environment variables
+#
+#####
+
+#####
+# Option1: Mount the ~/.aws/credentials file 
+#####
+#      - $HOME/.aws/credentials:/root/.aws/credentials:ro
+
+#####
+# Option2: Expose the credentials via environment variables
+#####
+#    environment:
+#      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+#      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+#      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+
+#---------------------------------------
+# Run modes. Uncomment one & only one!!!
+#---------------------------------------
+
+# Automated processing
+#    command: ["/tmp/deploy.sh"]
+
+# To run manually (eg for debug)
+    command: ["/bin/bash"]
