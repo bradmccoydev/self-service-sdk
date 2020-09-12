@@ -21,7 +21,7 @@ The template has the following structure:
 |:--:|:--|
 | | The top level directory contains the docker-compose file |
 | docker| This directory contains the dockerfile and docker entry script. You should not normally need to modify anything in here.|
-| work| This directory contains the files that need to be modified for your microservice including the lambda code itself and an inputs script |
+| work| This directory contains the files that need to be modified for your microservice such as the [inputs script](#input-variables) |
 
 
 ## Steps To Follow
@@ -45,16 +45,17 @@ The template makes use of a script inputs.sh located in the work directory. This
 | SERVICE_TIMEOUT | The timeout value for the service |
 | SERVICE_MEMORY | The memory limit for the service |
 | SERVICE_STORAGE | The S3 bucket path where the service zip should be saved to |
-| GO_PKG_IMPORTS | The GoLang packages to import to allow building of the service |
+| SERVICE_RUNTIME | The AWS Lambda runtime environment to use |
+| SERVICE_ROLE_ACTION | A flag to indicate whether to create a new role or use an existing: CREATE / USE |
 
 
 ## Template Process
 
 When you run the docker container via docker-compose up, it will perform the following steps:
-1. Copy your GoLang file to the work directory
-2. Build the GoLang binary for the linux OS & specified architecture (amd64, arm etc)
-3. Build the GoLang test binary for the linux OS & specified architecture (amd64, arm etc)
-4. Zip the compiled files
+1. Read the inputs script to get the values you provided
+2. Check that all variables, source files etc are available
+3. Build the microservice binary 
+4. Zip the binary
 5. Upload the zip file to the development deployments S3 bucket
 6. Create (or update if it exists) your lambda function
 7. Insert (or update) the entry in the service table in Dynamo DB
