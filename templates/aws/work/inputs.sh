@@ -49,6 +49,12 @@ export SERVICE_RUNTIME="go1.x"
 
 
 ###
+# Service Cloudwatch log retention period (days)
+###
+export SERVICE_LOG_RETENTION="7"
+
+
+###
 # Service role action
 ###
 export SERVICE_ROLE_ACTION="use"

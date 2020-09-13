@@ -24,9 +24,10 @@ RUN wget -O /tmp/tf.zip --quiet ${TF_URL} \
 ENV PATH ${PATH}:/usr/local/go/bin
 
 
-# Copy the required scripts
-COPY ./docker/docker-entrypoint.sh "/docker-entrypoint.sh"
-COPY ./docker/deploy.sh "/tmp/deploy.sh"
+# Copy the required files
+COPY ./docker/scripts/docker-entrypoint.sh "/docker-entrypoint.sh"
+COPY ./docker/scripts/deploy.sh "/tmp/deploy.sh"
+COPY ./docker/terraform /tmp/terraform
 
 
 # Set required permissions
