@@ -17,9 +17,10 @@ export DIR_ZIP="${DIR_BASE}/zip"
 ###
 # File Variables
 ###
-export FILE_USER_INPUTS="${DIR_WORK}/inputs.sh"
 export FILE_SERVICE_BINARY="${DIR_BUILD}/main"
 export FILE_SERVICE_ZIP="${DIR_ZIP}/main.zip"
+export FILE_TERRAFORM_BIN="/usr/local/bin/terraform"
+export FILE_USER_INPUTS="${DIR_WORK}/inputs.sh"
 
 ###
 # AWS Dynamo DB Variables
@@ -116,15 +117,6 @@ do_load_values() {
 
    # Read the file in
    . "${FILE_USER_INPUTS}"
-
-   # Iterate GO_PKG_IMPORTS array & rebuild
-   # to workaround weird array bug...
-   GO_LIBS=()
-   for i in ${!GO_PKG_IMPORTS[@]};
-   do
-      #echo "Processing import: ${GO_PKG_IMPORTS[$i]}"
-      GO_LIBS+=(${GO_PKG_IMPORTS[$i]})
-   done
 }
 
 
@@ -141,7 +133,6 @@ do_variable_check() {
    if [[ ${VERBOSE} == "TRUE" ]]; then
       log_it 2 "Checking for variable: ${1}"
    fi
-
    if [[ -z ${!1} ]]; then
       log_it 2 "*** FAILED *** ${1} is not set"
       log_it 2 ""
@@ -170,9 +161,15 @@ do_sanity_checks() {
    do_variable_check SERVICE_ROLE_ACTION
    do_variable_check SERVICE_ROLE_NAME
 
-   # Check source directory
-   # Still to do!
-
+   # Check source directory exists
+   if [[ ${VERBOSE} == "TRUE" ]]; then
+      log_it 2 "Checking that source directory: ${DIR_SOURCE} exists"
+   fi
+   if [[ ! -d ${DIR_SOURCE} ]]; then
+      log_it 2 "*** FAILED *** The source directory ${DIR_SOURCE} does not exist"
+      log_it 2 ""
+      exit 1;
+   fi
 }
 
 
@@ -185,8 +182,7 @@ do_build() {
 
    # Log start
    log_it 1 "Building microservice"
-   if [[ -d ${DIR_BUILD} ]];
-   then
+   if [[ -d ${DIR_BUILD} ]]; then
       rm -rf ${DIR_BUILD}
    fi
    mkdir -p ${DIR_BUILD}
@@ -199,6 +195,7 @@ do_build() {
       do
          log_it 3 "${FILE}"
       done
+      log_it 2 ""
    fi
  
    # Download dependencies
@@ -212,6 +209,7 @@ do_build() {
    fi
    
    # Build the binary
+   log_it 2 ""
    log_it 2 "Performing build"
    go build -o ${FILE_SERVICE_BINARY} 
    if [[ ${?} -ne 0 ]]; then
@@ -219,7 +217,6 @@ do_build() {
       log_it 2 ""
       exit 1;
    fi
-
 }
 
 
@@ -239,8 +236,12 @@ do_zip() {
    mkdir -p ${DIR_ZIP}
 
    # Zip the binary
-   zip -qr9 ${FILE_SERVICE_ZIP} ${DIR_BUILD}/*
-
+   if [[ ${VERBOSE} == "TRUE" ]]; then
+      zip -r9 ${FILE_SERVICE_ZIP} ${FILE_SERVICE_BINARY} 
+      log_it 2 ""
+   else
+      zip -qr9 ${FILE_SERVICE_ZIP} ${FILE_SERVICE_BINARY} 
+   fi
 }
 
 
