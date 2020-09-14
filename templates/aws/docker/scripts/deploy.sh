@@ -11,6 +11,7 @@
 export DIR_BASE="/tmp"
 export DIR_BUILD="${DIR_BASE}/build"
 export DIR_SOURCE="${DIR_BASE}/source"
+export DIR_TERRAFORM="${DIR_BASE}/terraform"
 export DIR_WORK="${DIR_BASE}/work"
 export DIR_ZIP="${DIR_BASE}/zip"
 
@@ -20,6 +21,7 @@ export DIR_ZIP="${DIR_BASE}/zip"
 export FILE_SERVICE_BINARY="${DIR_BUILD}/main"
 export FILE_SERVICE_ZIP="${DIR_ZIP}/main.zip"
 export FILE_TERRAFORM_BIN="/usr/local/bin/terraform"
+export FILE_TERRAFORM_TFVARS="${DIR_TERRAFORM}/service.auto.tfvars"
 export FILE_USER_INPUTS="${DIR_WORK}/inputs.sh"
 
 ###
@@ -125,7 +127,7 @@ do_load_values() {
 # Function to check if variable is set
 #
 ###
-do_variable_check() {
+do_check_variable_set() {
 
    # This function needs one argument:
    #    => $1 is the variable name
@@ -143,6 +145,29 @@ do_variable_check() {
 
 ###
 #
+# Function to check if variable is a positive integer
+#
+###
+do_check_variable_int() {
+
+   # This function needs one argument:
+   #    => $1 is the variable name
+
+   if [[ ${VERBOSE} == "TRUE" ]]; then
+      log_it 2 "Checking that variable: ${1} is a positive integer"
+   fi
+
+   REGEX_PATTERN="^[0-9]+$"
+   if [[ ! ${!1} =~ ${REGEX_PATTERN} ]]; then
+      log_it 2 "*** FAILED *** Variable ${1} value ${!1} is not a positive integer"
+      log_it 2 ""
+      exit 1;
+   fi  
+}
+
+
+###
+#
 # Function to perform basic sanity checks
 #
 ###
@@ -152,14 +177,20 @@ do_sanity_checks() {
    log_it 1 "Performing sanity checks"
 
    # Check we have the user variables we need
-   do_variable_check SERVICE_NAME
-   do_variable_check SERVICE_DESC
-   do_variable_check SERVICE_TIMEOUT
-   do_variable_check SERVICE_MEMORY
-   do_variable_check SERVICE_STORAGE
-   do_variable_check SERVICE_RUNTIME
-   do_variable_check SERVICE_ROLE_ACTION
-   do_variable_check SERVICE_ROLE_NAME
+   do_check_variable_set SERVICE_NAME
+   do_check_variable_set SERVICE_DESC
+   do_check_variable_set SERVICE_LOG_RETENTION
+   do_check_variable_set SERVICE_MEMORY
+   do_check_variable_set SERVICE_TIMEOUT
+   do_check_variable_set SERVICE_STORAGE
+   do_check_variable_set SERVICE_RUNTIME
+   do_check_variable_set SERVICE_ROLE_ACTION
+   do_check_variable_set SERVICE_ROLE_NAME
+
+   # Check that the following variables are positive integers
+   do_check_variable_int SERVICE_LOG_RETENTION
+   do_check_variable_int SERVICE_MEMORY
+   do_check_variable_int SERVICE_TIMEOUT
 
    # Check source directory exists
    if [[ ${VERBOSE} == "TRUE" ]]; then
