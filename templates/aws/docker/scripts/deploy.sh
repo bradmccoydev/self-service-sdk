@@ -183,6 +183,7 @@ do_sanity_checks() {
    do_check_variable_set SERVICE_MEMORY
    do_check_variable_set SERVICE_TIMEOUT
    do_check_variable_set SERVICE_STORAGE
+   do_check_variable_set SERVICE_REGION
    do_check_variable_set SERVICE_RUNTIME
    do_check_variable_set SERVICE_ROLE_ACTION
    do_check_variable_set SERVICE_ROLE_NAME
@@ -251,30 +252,81 @@ do_build() {
 }
 
 
+# ###
+# #
+# # Function to perform zip of binary
+# #
+# ###
+# do_zip() {
+
+#    # Log start
+#    log_it 1 "Creating zip"
+#    if [[ -d ${DIR_ZIP} ]]; then
+#       rm -rf ${DIR_ZIP}
+#    fi
+#    mkdir -p ${DIR_ZIP}
+
+#    # Zip the binary
+#    if [[ ${VERBOSE} == "TRUE" ]]; then
+#       zip -r9 ${FILE_SERVICE_ZIP} ${FILE_SERVICE_BINARY} 
+#       log_it 2 ""
+#    else
+#       zip -qr9 ${FILE_SERVICE_ZIP} ${FILE_SERVICE_BINARY} 
+#    fi
+# }
+
+
 ###
 #
-# Function to perform zip of binary
+# Function to append an entry to tfvars
 #
 ###
-do_zip() {
+do_append_tfvar() {
 
-   # Log start
-   log_it 1 "Creating zip"
-   if [[ -d ${DIR_ZIP} ]];
-   then
-      rm -rf ${DIR_ZIP}
-   fi
-   mkdir -p ${DIR_ZIP}
+   # This function needs two arguments:
+   #    => $1 is the key
+   #    => $2 is log value
 
-   # Zip the binary
+   # Verbose logging
    if [[ ${VERBOSE} == "TRUE" ]]; then
-      zip -r9 ${FILE_SERVICE_ZIP} ${FILE_SERVICE_BINARY} 
-      log_it 2 ""
-   else
-      zip -qr9 ${FILE_SERVICE_ZIP} ${FILE_SERVICE_BINARY} 
+      log_it 2 "Appending to TFVARS variable: ${1} with value: ${2}"
    fi
+
+   # Ok, append it
+   echo "${1} = \"${2}\"" >> ${FILE_TERRAFORM_TFVARS}
 }
 
+
+###
+#
+# Function to create a TFVARS file
+#
+###
+do_create_tfvars() {
+
+   # Log start
+   log_it 1 "Creating Terraform variables file"
+
+   # Delete file if it already exists
+   if [[ -f ${FILE_TERRAFORM_TFVARS} ]]; then
+      rm -rf ${FILE_TERRAFORM_TFVARS}
+   fi
+
+   # Add the user variables
+   do_append_tfvar "service_name" "${SERVICE_NAME}"
+   do_append_tfvar "service_desc" "${SERVICE_DESC}"
+   do_append_tfvar "service_memory" "${SERVICE_MEMORY}"
+   do_append_tfvar "service_timeout" "${SERVICE_TIMEOUT}"
+   do_append_tfvar "service_runtime" "${SERVICE_RUNTIME}"
+   do_append_tfvar "service_role" "${SERVICE_ROLE_NAME}" 
+   do_append_tfvar "aws_region" "${SERVICE_REGION}"
+   do_append_tfvar "service_log_retention" "${SERVICE_LOG_RETENTION}"
+
+   # Add the other bits we need
+   do_append_tfvar "service_handler" "${AWS_LAMBDA_HANDLER}"
+   do_append_tfvar "zip_input" "${DIR_BUILD}" 
+   do_append_tfvar "zip_output" "${FILE_SERVICE_ZIP}"
+}
 
 
 #################################################
@@ -316,10 +368,10 @@ if [[ ${MODE} != "DELETE" ]]; then
    do_build
 
    # Zip the binary
-   do_zip
+   #do_zip
 
-   # Do Terraform stuff!
-   # Still to do!
+   # Create TFVARS file
+   do_create_tfvars
 
 fi
 

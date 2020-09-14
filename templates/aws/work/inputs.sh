@@ -64,3 +64,9 @@ export SERVICE_ROLE_ACTION="use"
 # Service role name
 ###
 export SERVICE_ROLE_NAME="false"
+
+
+###
+# Service AWS Region
+###
+export SERVICE_REGION="us-west-2"
