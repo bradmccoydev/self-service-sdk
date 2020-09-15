@@ -18,7 +18,9 @@ services:
 
 #####
 #
-# The following mount is used to expose the inputs script.
+# Work Directory Mount
+#
+# This volume mount is used to expose the inputs script.
 # This shouldn' be changed unless you know what you're doing!
 #
 #####
@@ -26,18 +28,19 @@ services:
 
 #####
 #
-# The following mount is used to expose the microservice source code.
+# Source Code Mount
+#
+# This volume mount is used to expose the source code for the service.
 # Change the mount point to the source folder on your pc.
 #
 #####
-      - ./example:/tmp/source
+      - ./example:/tmp/source:ro
 
 #####
 #
-# The following is used to make your AWS credentials available
-# to deploy the microservice to AWS. You need to choose one option.
-# You can either:
+# AWS credentials 
 #
+# You can either:
 #    1) Directly expose the credentials file via a mount
 #    2) Expose the credentials via environment variables
 #

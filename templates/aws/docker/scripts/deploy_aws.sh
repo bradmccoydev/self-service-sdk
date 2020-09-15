@@ -288,8 +288,8 @@ do_build() {
    # Dump a copy?
    if [[ ${SERVICE_ARTEFACTS_DUMP,,} == "true" ]]; then
 
-      if [[ -f ${DIR_WORK_OUT}/ ${FILE_SERVICE_BINARY} ]]; then
-         rm -rf ${DIR_WORK_OUT}/ ${FILE_SERVICE_BINARY}
+      if [[ -f ${DIR_WORK_OUT}/${FILE_SERVICE_BINARY} ]]; then
+         rm -rf ${DIR_WORK_OUT}/${FILE_SERVICE_BINARY}
       fi
       cp ${FILE_SERVICE_BINARY} ${DIR_WORK_OUT}
    fi
