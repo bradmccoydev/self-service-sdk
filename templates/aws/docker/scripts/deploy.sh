@@ -18,10 +18,12 @@ export DIR_ZIP="${DIR_BASE}/zip"
 ###
 # File Variables
 ###
+export FILE_GO_GET_OUT="${DIR_BASE}/go_get.out"
 export FILE_SERVICE_BINARY="${DIR_BUILD}/main"
 export FILE_SERVICE_ZIP="${DIR_ZIP}/main.zip"
 export FILE_TERRAFORM_BIN="/usr/local/bin/terraform"
-export FILE_TERRAFORM_TFVARS="${DIR_TERRAFORM}/service.auto.tfvars"
+export FILE_TERRAFORM_PLAN_OUT="${DIR_TERRAFORM}/tfapply.out"
+export FILE_TERRAFORM_TFVARS="${DIR_TERRAFORM}/variables.tfvars"
 export FILE_USER_INPUTS="${DIR_WORK}/inputs.sh"
 
 ###
@@ -207,13 +209,42 @@ do_sanity_checks() {
 
 ###
 #
+# Function to download any required dependencies
+#
+###
+do_get_dependencies() {
+
+   # Log start
+   log_it 1 "Downloading dependencies"
+
+   # Download dependencies
+   cd ${DIR_SOURCE}
+   if [[ ${VERBOSE} == "TRUE" ]]; then
+      go get ./... 
+   else
+      go get ./... > /dev/null 2>&1
+   fi
+   if [[ ${?} -ne 0 ]]; then
+      log_it 2 "*** FAILED *** ERROR reported by go get"
+      log_it 2 ""
+      log_it 2 
+      log_it 2 ""
+      exit 1;
+   fi
+}
+
+
+###
+#
 # Function to perform build of the binary
 #
 ###
 do_build() {
 
    # Log start
-   log_it 1 "Building microservice"
+   log_it 1 "Building source code"
+
+   # Setup
    if [[ -d ${DIR_BUILD} ]]; then
       rm -rf ${DIR_BUILD}
    fi
@@ -230,19 +261,7 @@ do_build() {
       log_it 2 ""
    fi
  
-   # Download dependencies
-   log_it 2 "Downloading dependencies"
-   cd ${DIR_SOURCE}
-   go get ./...
-   if [[ ${?} -ne 0 ]]; then
-      log_it 2 "*** FAILED *** ERROR reported by go get"
-      log_it 2 ""
-      exit 1;
-   fi
-   
    # Build the binary
-   log_it 2 ""
-   log_it 2 "Performing build"
    go build -o ${FILE_SERVICE_BINARY} 
    if [[ ${?} -ne 0 ]]; then
       log_it 2 "*** FAILED *** ERROR reported by go build"
@@ -305,7 +324,7 @@ do_append_tfvar() {
 do_create_tfvars() {
 
    # Log start
-   log_it 1 "Creating Terraform variables file"
+   log_it 1 "Creating variables file"
 
    # Delete file if it already exists
    if [[ -f ${FILE_TERRAFORM_TFVARS} ]]; then
@@ -326,6 +345,56 @@ do_create_tfvars() {
    do_append_tfvar "service_handler" "${AWS_LAMBDA_HANDLER}"
    do_append_tfvar "zip_input" "${DIR_BUILD}" 
    do_append_tfvar "zip_output" "${FILE_SERVICE_ZIP}"
+}
+
+
+###
+#
+# Function to run Terraform init & plan
+#
+###
+do_perform_tfplan() {
+
+   # Log start
+   log_it 1 "Performing deployment plan"
+
+   # Setup
+   cd ${DIR_TERRAFORM}
+
+   # Run init
+   log_it 2 "Running terraform init..."
+   if [[ ${VERBOSE} == "TRUE" ]]; then
+      log_it 2 ""
+      terraform init
+      RESULT=${?}
+      log_it 2 ""
+   else
+      terraform init > /dev/null
+      RESULT=${?}
+   fi
+   if [[ ${RESULT} -ne 0 ]]; then
+      log_it 2 "*** FAILED *** ERROR reported by terraform init"
+      log_it 2 ""
+      exit 1;
+   fi
+
+   # Run plan
+   log_it 2 "Running terraform plan..."
+   if [[ ${VERBOSE} == "TRUE" ]]; then
+      log_it 2 ""
+      terraform plan -input=false -out ${FILE_TERRAFORM_PLAN_OUT} -var-file ${FILE_TERRAFORM_TFVARS}
+      RESULT=${?}
+      log_it 2 ""
+   else
+      terraform plan -input=false -out ${FILE_TERRAFORM_PLAN_OUT} -var-file ${FILE_TERRAFORM_TFVARS} > /dev/null
+      RESULT=${?}
+   fi
+   if [[ ${RESULT} -ne 0 ]]; then
+      log_it 2 "*** FAILED *** ERROR reported by terraform plan"
+      log_it 2 ""
+      exit 1;
+   fi
+
 }
 
 
@@ -364,6 +433,9 @@ do_sanity_checks
 # If we are not in delete mode
 if [[ ${MODE} != "DELETE" ]]; then
 
+   # Get any build dependencies
+   do_get_dependencies
+
    # Build the binary
    do_build
 
@@ -372,6 +444,9 @@ if [[ ${MODE} != "DELETE" ]]; then
 
    # Create TFVARS file
    do_create_tfvars
+
+   # Perform terraform init & plan
+   do_perform_tfplan
 
 fi
 
