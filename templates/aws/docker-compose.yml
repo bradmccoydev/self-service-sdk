@@ -61,7 +61,7 @@ services:
 #---------------------------------------
 
 # Automated processing
-#    command: ["/tmp/deploy.sh"]
+#    command: ["/tmp/deploy_aws.sh"]
 
 # To run manually (eg for debug)
     command: ["/bin/bash"]

@@ -13,6 +13,7 @@ export DIR_BUILD="${DIR_BASE}/build"
 export DIR_SOURCE="${DIR_BASE}/source"
 export DIR_TERRAFORM="${DIR_BASE}/terraform"
 export DIR_WORK="${DIR_BASE}/work"
+export DIR_WORK_OUT="${DIR_WORK}/outputs"
 export DIR_ZIP="${DIR_BASE}/zip"
 
 ###
@@ -282,6 +283,15 @@ do_build() {
       log_it 2 "*** FAILED *** ERROR reported by go build"
       log_it 2 ""
       exit 1;
+   fi
+
+   # Dump a copy?
+   if [[ ${SERVICE_ARTEFACTS_DUMP,,} == "true" ]]; then
+
+      if [[ -f ${DIR_WORK_OUT}/ ${FILE_SERVICE_BINARY} ]]; then
+         rm -rf ${DIR_WORK_OUT}/ ${FILE_SERVICE_BINARY}
+      fi
+      cp ${FILE_SERVICE_BINARY} ${DIR_WORK_OUT}
    fi
 }
 
