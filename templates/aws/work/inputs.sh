@@ -6,11 +6,10 @@
 #
 #############################################################
 
-###
-# Run Mode
-###
-#export RUN_MODE="delete"
-
+#----------------------------------------------------------#
+# The follow variables define the Lambda service name
+# behaviour etc.
+#
 
 ###
 # Service name
@@ -43,7 +42,7 @@ export SERVICE_STORAGE="s3://my_s3_bucket/some/path"
 
 
 ###
-# Service storage
+# Service runtime
 ###
 export SERVICE_RUNTIME="go1.x"
 
@@ -70,3 +69,20 @@ export SERVICE_ROLE_NAME="false"
 # Service AWS Region
 ###
 export SERVICE_REGION="us-west-2"
+
+
+#----------------------------------------------------------#
+# The follow variables control the behaviour of the 
+# deployment script.
+#
+
+###
+# Run Mode
+###
+#export SERVICE_DEPLOY_MODE="delete"
+
+
+###
+# Dump artefacts
+###
+export SERVICE_ARTEFACTS_DUMP="true"

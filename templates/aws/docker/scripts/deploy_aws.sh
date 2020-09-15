@@ -117,10 +117,21 @@ log_it() {
 do_load_values() {
 
    # Log start
-   log_it 1 "Importing user variables"
+   log_it 1 "Importing user variables..."
 
    # Read the file in
    . "${FILE_USER_INPUTS}"
+
+   # Verbose logging
+   if [[ ${VERBOSE} == "TRUE" ]]; then
+      log_it 2 ""
+      log_it 2 "The following values were loaded:"
+      for value in `env | grep ^SERVICE_`
+      do
+         log_it 3 ${value}
+      done
+      log_it 2 ""
+   fi
 }
 
 
@@ -176,7 +187,7 @@ do_check_variable_int() {
 do_sanity_checks() {
 
    # Log start
-   log_it 1 "Performing sanity checks"
+   log_it 1 "Performing sanity checks..."
 
    # Check we have the user variables we need
    do_check_variable_set SERVICE_NAME
@@ -215,16 +226,20 @@ do_sanity_checks() {
 do_get_dependencies() {
 
    # Log start
-   log_it 1 "Downloading dependencies"
+   log_it 1 "Downloading dependencies..."
 
    # Download dependencies
    cd ${DIR_SOURCE}
    if [[ ${VERBOSE} == "TRUE" ]]; then
+      log_it 2 ""
       go get ./... 
+      RESULT=${?}
+      log_it 2 ""
    else
       go get ./... > /dev/null 2>&1
+      RESULT=${?}
    fi
-   if [[ ${?} -ne 0 ]]; then
+   if [[ ${RESULT} -ne 0 ]]; then
       log_it 2 "*** FAILED *** ERROR reported by go get"
       log_it 2 ""
       log_it 2 
@@ -242,7 +257,7 @@ do_get_dependencies() {
 do_build() {
 
    # Log start
-   log_it 1 "Building source code"
+   log_it 1 "Performing build of source..."
 
    # Setup
    if [[ -d ${DIR_BUILD} ]]; then
@@ -324,7 +339,7 @@ do_append_tfvar() {
 do_create_tfvars() {
 
    # Log start
-   log_it 1 "Creating variables file"
+   log_it 1 "Creating terraform tfvars file..."
 
    # Delete file if it already exists
    if [[ -f ${FILE_TERRAFORM_TFVARS} ]]; then
@@ -350,19 +365,16 @@ do_create_tfvars() {
 
 ###
 #
-# Function to run Terraform init & plan
+# Function to run Terraform init
 #
 ###
-do_perform_tfplan() {
+do_perform_tfinit() {
 
    # Log start
-   log_it 1 "Performing deployment plan"
-
-   # Setup
-   cd ${DIR_TERRAFORM}
+   log_it 1 "Performing terraform init..."
 
    # Run init
-   log_it 2 "Running terraform init..."
+   cd ${DIR_TERRAFORM}
    if [[ ${VERBOSE} == "TRUE" ]]; then
       log_it 2 ""
       terraform init
@@ -377,9 +389,21 @@ do_perform_tfplan() {
       log_it 2 ""
       exit 1;
    fi
+}
+
+
+###
+#
+# Function to run Terraform plan
+#
+###
+do_perform_tfplan() {
+
+   # Log start
+   log_it 1 "Performing terraform plan..."
 
    # Run plan
-   log_it 2 "Running terraform plan..."
+   cd ${DIR_TERRAFORM}
    if [[ ${VERBOSE} == "TRUE" ]]; then
       log_it 2 ""
       terraform plan -input=false -out ${FILE_TERRAFORM_PLAN_OUT} -var-file ${FILE_TERRAFORM_TFVARS}
@@ -396,6 +420,7 @@ do_perform_tfplan() {
    fi
 
 }
+
 
 
 #################################################
@@ -445,7 +470,10 @@ if [[ ${MODE} != "DELETE" ]]; then
    # Create TFVARS file
    do_create_tfvars
 
-   # Perform terraform init & plan
+   # Perform terraform init
+   do_perform_tfinit
+
+   # Perform terraform plan
    do_perform_tfplan
 
 fi

@@ -26,13 +26,13 @@ ENV PATH ${PATH}:/usr/local/go/bin
 
 # Copy the required files
 COPY ./docker/scripts/docker-entrypoint.sh "/docker-entrypoint.sh"
-COPY ./docker/scripts/deploy.sh "/tmp/deploy.sh"
+COPY ./docker/scripts/deploy_aws.sh "/tmp/deploy_aws.sh"
 COPY ./docker/terraform /tmp/terraform
 
 
 # Set required permissions
 RUN chmod +x "/docker-entrypoint.sh" \
- && chmod +x "/tmp/deploy.sh"
+ && chmod +x "/tmp/deploy_aws.sh"
 
 
 # Set the work directory
