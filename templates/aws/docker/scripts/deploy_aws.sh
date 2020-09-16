@@ -17,15 +17,22 @@ export DIR_WORK_OUT="${DIR_WORK}/outputs"
 export DIR_ZIP="${DIR_BASE}/zip"
 
 ###
-# File Variables
+# File Name Variables
 ###
-export FILE_GO_GET_OUT="${DIR_BASE}/go_get.out"
-export FILE_SERVICE_BINARY="${DIR_BUILD}/main"
-export FILE_SERVICE_ZIP="${DIR_ZIP}/main.zip"
-export FILE_TERRAFORM_BIN="/usr/local/bin/terraform"
-export FILE_TERRAFORM_PLAN_OUT="${DIR_TERRAFORM}/tfapply.out"
-export FILE_TERRAFORM_TFVARS="${DIR_TERRAFORM}/variables.tfvars"
-export FILE_USER_INPUTS="${DIR_WORK}/inputs.sh"
+export FILE_NAME_SERVICE_BINARY="main"
+export FILE_NAME_SERVICE_ZIP="main.zip"
+export FILE_NAME_TF_PLAN_OUT="tfapply.out"
+export FILE_NAME_TFVARS="variables.tfvars"
+export FILE_NAME_USER_INPUTS="inputs.sh"
+
+###
+# File Path Variables
+###
+export FILE_PATH_SERVICE_BINARY="${DIR_BUILD}/${FILE_NAME_SERVICE_BINARY}"
+export FILE_PATH_SERVICE_ZIP="${DIR_ZIP}/${FILE_NAME_SERVICE_ZIP}"
+export FILE_PATH_TF_PLAN_OUT="${DIR_TERRAFORM}/${FILE_NAME_TF_PLAN_OUT}"
+export FILE_PATH_TFVARS="${DIR_TERRAFORM}/${FILE_NAME_TFVARS}"
+export FILE_PATH_USER_INPUTS="${DIR_WORK}/${FILE_NAME_USER_INPUTS}"
 
 ###
 # AWS Dynamo DB Variables
@@ -121,7 +128,7 @@ do_load_values() {
    log_it 1 "Importing user variables..."
 
    # Read the file in
-   . "${FILE_USER_INPUTS}"
+   . "${FILE_PATH_USER_INPUTS}"
 
    # Verbose logging
    if [[ ${VERBOSE} == "TRUE" ]]; then
@@ -278,7 +285,7 @@ do_build() {
    fi
  
    # Build the binary
-   go build -o ${FILE_SERVICE_BINARY} 
+   go build -o ${FILE_PATH_SERVICE_BINARY} 
    if [[ ${?} -ne 0 ]]; then
       log_it 2 "*** FAILED *** ERROR reported by go build"
       log_it 2 ""
@@ -288,10 +295,18 @@ do_build() {
    # Dump a copy?
    if [[ ${SERVICE_ARTEFACTS_DUMP,,} == "true" ]]; then
 
-      if [[ -f ${DIR_WORK_OUT}/${FILE_SERVICE_BINARY} ]]; then
-         rm -rf ${DIR_WORK_OUT}/${FILE_SERVICE_BINARY}
+      # Check output directory exists
+      if [[ ! -d ${DIR_WORK_OUT} ]]; then
+         mkdir -p ${DIR_WORK_OUT}
       fi
-      cp ${FILE_SERVICE_BINARY} ${DIR_WORK_OUT}
+
+      # Remove file if already there
+      if [[ -f ${DIR_WORK_OUT}/${FILE_NAME_SERVICE_BINARY} ]]; then
+         rm -rf ${DIR_WORK_OUT}/${FILE_NAME_SERVICE_BINARY}
+      fi
+
+      # Copy the binary
+      cp ${FILE_PATH_SERVICE_BINARY} ${DIR_WORK_OUT}
    fi
 }
 
@@ -337,7 +352,7 @@ do_append_tfvar() {
    fi
 
    # Ok, append it
-   echo "${1} = \"${2}\"" >> ${FILE_TERRAFORM_TFVARS}
+   echo "${1} = \"${2}\"" >> ${FILE_PATH_TFVARS}
 }
 
 
@@ -352,8 +367,8 @@ do_create_tfvars() {
    log_it 1 "Creating terraform tfvars file..."
 
    # Delete file if it already exists
-   if [[ -f ${FILE_TERRAFORM_TFVARS} ]]; then
-      rm -rf ${FILE_TERRAFORM_TFVARS}
+   if [[ -f ${FILE_PATH_TFVARS} ]]; then
+      rm -rf ${FILE_PATH_TFVARS}
    fi
 
    # Add the user variables
@@ -369,7 +384,25 @@ do_create_tfvars() {
    # Add the other bits we need
    do_append_tfvar "service_handler" "${AWS_LAMBDA_HANDLER}"
    do_append_tfvar "zip_input" "${DIR_BUILD}" 
-   do_append_tfvar "zip_output" "${FILE_SERVICE_ZIP}"
+   do_append_tfvar "zip_output" "${FILE_PATH_SERVICE_ZIP}"
+
+
+   # Dump a copy?
+   if [[ ${SERVICE_ARTEFACTS_DUMP,,} == "true" ]]; then
+
+      # Check output directory exists
+      if [[ ! -d ${DIR_WORK_OUT} ]]; then
+         mkdir -p ${DIR_WORK_OUT}
+      fi
+
+      # Remove file if already there
+      if [[ -f ${DIR_WORK_OUT}/${FILE_NAME_TFVARS} ]]; then
+         rm -rf ${DIR_WORK_OUT}/${FILE_NAME_TFVARS}
+      fi
+
+      # Copy the file
+      cp ${FILE_PATH_TFVARS} ${DIR_WORK_OUT}
+   fi
 }
 
 
@@ -416,11 +449,11 @@ do_perform_tfplan() {
    cd ${DIR_TERRAFORM}
    if [[ ${VERBOSE} == "TRUE" ]]; then
       log_it 2 ""
-      terraform plan -input=false -out ${FILE_TERRAFORM_PLAN_OUT} -var-file ${FILE_TERRAFORM_TFVARS}
+      terraform plan -input=false -out ${FILE_PATH_TF_PLAN_OUT} -var-file ${FILE_PATH_TFVARS}
       RESULT=${?}
       log_it 2 ""
    else
-      terraform plan -input=false -out ${FILE_TERRAFORM_PLAN_OUT} -var-file ${FILE_TERRAFORM_TFVARS} > /dev/null
+      terraform plan -input=false -out ${FILE_PATH_TF_PLAN_OUT} -var-file ${FILE_PATH_TFVARS} > /dev/null
       RESULT=${?}
    fi
    if [[ ${RESULT} -ne 0 ]]; then
@@ -428,7 +461,6 @@ do_perform_tfplan() {
       log_it 2 ""
       exit 1;
    fi
-
 }
 
 

@@ -120,7 +120,7 @@ The table below details the options that can be configured in the docker-compose
 | Option | Purpose | 
 |:--:|:--|
 | Work Directory Mount | To make the work directory, with the inputs script accessible to the container |
-| Source Code Mount | To make the source code accessible (in read-only mode) to the container |
+| Source Code Mount | To make the source code accessible to the container |
 | AWS Credentials File Mount | To make the user's AWS credentials file accessible (in read-only mode) to the container |
 | AWS Credentials Environment Variables | To make the user's AWS credentials available as environment variables |
 | Run Mode | An override for the container entrypoint command. Normally this should be set to run /tmp/deploy_aws.sh. For debugging purposes you can switch to /bin/bash |
@@ -128,11 +128,12 @@ The table below details the options that can be configured in the docker-compose
 
 ## Template Process
 
-When you run the docker container via docker-compose up, it will perform the following steps:
+When you run the docker container via docker-compose up, the deploy script runs which performs the following steps:
 1. Read the inputs script to get the values you provided
 2. Check that all variables, source files etc are available
-3. Build the microservice binary 
-4. Zip the binary
-5. Upload the zip file to the development deployments S3 bucket
-6. Create (or update if it exists) your lambda function
-7. Insert (or update) the entry in the service table in Dynamo DB
+3. Download any dependencies (specified in the go.mod file)
+4. Build the service binary 
+5. Create the tfvars file to provide required values for the terraform variables
+6. Run terraform init
+7. Run terraform plan, using the tfvars from step 5
+8. Run terraform apply, using the plan from step 7
