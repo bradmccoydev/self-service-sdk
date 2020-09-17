@@ -21,6 +21,7 @@ export DIR_ZIP="${DIR_BASE}/zip"
 ###
 export FILE_NAME_SERVICE_BINARY="main"
 export FILE_NAME_SERVICE_ZIP="main.zip"
+export FILE_NAME_TF_BACKEND="backend.tf"
 export FILE_NAME_TF_PLAN_OUT="tfapply.out"
 export FILE_NAME_TFVARS="variables.tfvars"
 export FILE_NAME_USER_INPUTS="inputs.sh"
@@ -30,6 +31,7 @@ export FILE_NAME_USER_INPUTS="inputs.sh"
 ###
 export FILE_PATH_SERVICE_BINARY="${DIR_BUILD}/${FILE_NAME_SERVICE_BINARY}"
 export FILE_PATH_SERVICE_ZIP="${DIR_ZIP}/${FILE_NAME_SERVICE_ZIP}"
+export FILE_PATH_TF_BACKEND="${DIR_TERRAFORM}/${FILE_NAME_TF_BACKEND}"
 export FILE_PATH_TF_PLAN_OUT="${DIR_TERRAFORM}/${FILE_NAME_TF_PLAN_OUT}"
 export FILE_PATH_TFVARS="${DIR_TERRAFORM}/${FILE_NAME_TFVARS}"
 export FILE_PATH_USER_INPUTS="${DIR_WORK}/${FILE_NAME_USER_INPUTS}"
@@ -48,6 +50,7 @@ export AWS_LAMBDA_HANDLER="tmp/build/lambda/main"
 
 #------------------------------------------------------------
 # Nothing should be modified below this point!!!
+#
 
 ###
 #
@@ -133,8 +136,14 @@ do_load_values() {
    # Verbose logging
    if [[ ${VERBOSE} == "TRUE" ]]; then
       log_it 2 ""
-      log_it 2 "The following values were loaded:"
+      log_it 2 "The following SERVICE values were loaded:"
       for value in `env | grep ^SERVICE_`
+      do
+         log_it 3 ${value}
+      done
+      log_it 2 ""
+      log_it 2 "The following TERRAFORM values were loaded:"
+      for value in `env | grep ^TERRAFORM_`
       do
          log_it 3 ${value}
       done
@@ -213,6 +222,14 @@ do_sanity_checks() {
    do_check_variable_int SERVICE_LOG_RETENTION
    do_check_variable_int SERVICE_MEMORY
    do_check_variable_int SERVICE_TIMEOUT
+
+   # Check terraform state variables are set if remote state requested
+   if [[ ${TERRAFORM_REMOTE_STATE,,} == "true" ]]; then
+      do_check_variable_set TERRAFORM_STATE_S3_BUCKET_NAME
+      do_check_variable_set TERRAFORM_STATE_S3_KEY
+      do_check_variable_set TERRAFORM_STATE_S3_REGION
+      do_check_variable_set TERRAFORM_STATE_DYNAMODB_TABLE_NAME
+   fi
 
    # Check source directory exists
    if [[ ${VERBOSE} == "TRUE" ]]; then
@@ -296,9 +313,10 @@ do_build() {
    if [[ ${SERVICE_ARTEFACTS_DUMP,,} == "true" ]]; then
 
       # Check output directory exists
-      if [[ ! -d ${DIR_WORK_OUT} ]]; then
-         mkdir -p ${DIR_WORK_OUT}
+      if [[ -d ${DIR_WORK_OUT} ]]; then
+         rm -rf ${DIR_WORK_OUT}
       fi
+      mkdir -p ${DIR_WORK_OUT}
 
       # Remove file if already there
       if [[ -f ${DIR_WORK_OUT}/${FILE_NAME_SERVICE_BINARY} ]]; then
@@ -372,36 +390,82 @@ do_create_tfvars() {
    fi
 
    # Add the user variables
-   do_append_tfvar "service_name" "${SERVICE_NAME}"
-   do_append_tfvar "service_desc" "${SERVICE_DESC}"
-   do_append_tfvar "service_memory" "${SERVICE_MEMORY}"
-   do_append_tfvar "service_timeout" "${SERVICE_TIMEOUT}"
-   do_append_tfvar "service_runtime" "${SERVICE_RUNTIME}"
-   do_append_tfvar "service_role" "${SERVICE_ROLE_NAME}" 
-   do_append_tfvar "aws_region" "${SERVICE_REGION}"
+   do_append_tfvar "service_name"          "${SERVICE_NAME}"
+   do_append_tfvar "service_desc"          "${SERVICE_DESC}"
+   do_append_tfvar "service_memory"        "${SERVICE_MEMORY}"
+   do_append_tfvar "service_timeout"       "${SERVICE_TIMEOUT}"
+   do_append_tfvar "service_runtime"       "${SERVICE_RUNTIME}"
+   do_append_tfvar "service_role"          "${SERVICE_ROLE_NAME}" 
+   do_append_tfvar "service_aws_region"    "${SERVICE_REGION}"
    do_append_tfvar "service_log_retention" "${SERVICE_LOG_RETENTION}"
 
-   # Add the other bits we need
-   do_append_tfvar "service_handler" "${AWS_LAMBDA_HANDLER}"
-   do_append_tfvar "zip_input" "${DIR_BUILD}" 
-   do_append_tfvar "zip_output" "${FILE_PATH_SERVICE_ZIP}"
+   # Add the other bits we need for the service
+   do_append_tfvar "service_handler"       "${AWS_LAMBDA_HANDLER}"
+   do_append_tfvar "service_zip_input"     "${DIR_BUILD}" 
+   do_append_tfvar "service_zip_output"    "${FILE_PATH_SERVICE_ZIP}"
+}
 
+
+###
+#
+# Function to append an entry to backend.tf
+#
+###
+do_append_backend() {
+
+   # This function needs two arguments:
+   #    => $1 is the value to append
+
+   # Verbose logging
+   if [[ ${VERBOSE} == "TRUE" ]]; then
+      log_it 2 "Appending to backend file ${FILE_NAME_TF_BACKEND} the value: ${1}"
+   fi
+
+   # Ok, append it
+   echo "${1}" >> ${FILE_PATH_TF_BACKEND}
+}
+
+
+###
+#
+# Function to create a backend.tf file
+#
+###
+do_create_tf_backend() {
+
+   # Log start
+   log_it 1 "Creating terraform ${FILE_NAME_TF_BACKEND} file..."
+
+   # Delete file if it already exists
+   if [[ -f ${FILE_PATH_TF_BACKEND} ]]; then
+      rm -rf ${FILE_PATH_TF_BACKEND}
+   fi
+
+   # Remote or local backend?
+   if [[ ${TERRAFORM_REMOTE_STATE,,} == "true" ]]; then
+      log_it 2 "Using remote AWS backend..."
+      do_append_backend "terraform {" 
+      do_append_backend "   backend \"s3\" {"  
+      do_append_backend "      bucket = \"${TERRAFORM_STATE_S3_BUCKET_NAME}\""
+      do_append_backend "      key = \"${TERRAFORM_STATE_S3_KEY}\"" 
+      do_append_backend "      region = \"${TERRAFORM_STATE_S3_REGION}\"" 
+      do_append_backend "      dynamodb_table = \"${TERRAFORM_STATE_DYNAMODB_TABLE_NAME}\""
+      do_append_backend "      encrypt = true" 
+      do_append_backend "   }" 
+      do_append_backend "}" 
+   else
+      log_it 2 "Using local backend..."
+      do_append_backend "terraform {" 
+      do_append_backend "   backend \"local\" {"  
+      do_append_backend "   }" 
+      do_append_backend "}" 
+   fi
 
    # Dump a copy?
    if [[ ${SERVICE_ARTEFACTS_DUMP,,} == "true" ]]; then
 
-      # Check output directory exists
-      if [[ ! -d ${DIR_WORK_OUT} ]]; then
-         mkdir -p ${DIR_WORK_OUT}
-      fi
-
-      # Remove file if already there
-      if [[ -f ${DIR_WORK_OUT}/${FILE_NAME_TFVARS} ]]; then
-         rm -rf ${DIR_WORK_OUT}/${FILE_NAME_TFVARS}
-      fi
-
-      # Copy the file
-      cp ${FILE_PATH_TFVARS} ${DIR_WORK_OUT}
+      # Copy the terraform files
+      cp ${DIR_TERRAFORM}/* ${DIR_WORK_OUT}
    fi
 }
 
@@ -464,6 +528,35 @@ do_perform_tfplan() {
 }
 
 
+###
+#
+# Function to run Terraform apply
+#
+###
+do_perform_tfapply() {
+
+   # Log start
+   log_it 1 "Performing terraform apply..."
+
+   # Run plan
+   cd ${DIR_TERRAFORM}
+   if [[ ${VERBOSE} == "TRUE" ]]; then
+      log_it 2 ""
+      terraform apply -input=false -auto-approve ${FILE_PATH_TF_PLAN_OUT}
+      RESULT=${?}
+      log_it 2 ""
+   else
+      terraform apply -input=false -auto-approve ${FILE_PATH_TF_PLAN_OUT} > /dev/null
+      RESULT=${?}
+   fi
+   if [[ ${RESULT} -ne 0 ]]; then
+      log_it 2 "*** FAILED *** ERROR reported by terraform apply"
+      log_it 2 ""
+      exit 1;
+   fi
+}
+
+
 
 #################################################
 #
@@ -506,11 +599,11 @@ if [[ ${MODE} != "DELETE" ]]; then
    # Build the binary
    do_build
 
-   # Zip the binary
-   #do_zip
-
    # Create TFVARS file
    do_create_tfvars
+
+   # Create backend state file
+   do_create_tf_backend
 
    # Perform terraform init
    do_perform_tfinit

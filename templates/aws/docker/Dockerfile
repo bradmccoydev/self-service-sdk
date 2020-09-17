@@ -14,7 +14,7 @@ RUN wget -O /tmp/go.tar.gz --quiet ${GO_URL} \
 
 
 # Install Terraform
-ARG TF_VERS=0.13.2
+ARG TF_VERS=0.13.3
 ARG TF_URL="https://releases.hashicorp.com/terraform/${TF_VERS}/terraform_${TF_VERS}_linux_amd64.zip"
 RUN wget -O /tmp/tf.zip --quiet ${TF_URL} \
  && unzip /tmp/tf.zip -d /usr/local/bin

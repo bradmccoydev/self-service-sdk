@@ -4,7 +4,11 @@
 # 
 ##################################################################
 
-variable "aws_region" {
+#------------------------------------------------------------
+# The following variables are for the lambda definition
+#
+
+variable "service_aws_region" {
   description = "AWS region"
   type = string
 }
@@ -49,12 +53,42 @@ variable "service_log_retention" {
   type = number
 }
 
-variable "zip_input" {
+variable "service_zip_input" {
   description = "The directory containing the service binary"
   type = string
 }
 
-variable "zip_output" {
+variable "service_zip_output" {
   description = "The name & path of the zip file to be created"
   type = string
 }
+
+
+#------------------------------------------------------------
+# The following variables are for the terraform backend
+#
+
+#variable "use_remote_terraform_state" {
+#  description = "Whether to use remote storage for terraform state"
+#  type = bool
+#}
+
+#variable "terraform_state_s3_bucket" {
+#  description = "The name of the S3 bucket to use to store the terraform state file"
+#  type = string
+#}
+
+#variable "terraform_state_s3_key" {
+#  description = "The key to use to access the terraform state file"
+#  type = string
+#}
+
+#variable "terraform_state_s3_region" {
+#  description = "The region for the S3 bucket"
+#  type = string
+#}
+
+#variable "terraform_state_dynamo_table" {
+#  description = "The name of the Dynamo DB table to use for managing the terraform state locks"
+#  type = string
+#}

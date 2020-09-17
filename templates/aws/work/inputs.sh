@@ -71,6 +71,7 @@ export SERVICE_ROLE_NAME="false"
 export SERVICE_REGION="us-west-2"
 
 
+
 #----------------------------------------------------------#
 # The follow variables control the behaviour of the 
 # deployment script.
@@ -86,3 +87,36 @@ export SERVICE_REGION="us-west-2"
 # Dump artefacts
 ###
 export SERVICE_ARTEFACTS_DUMP="true"
+
+
+
+#----------------------------------------------------------#
+# The follow variables define whether to use a remote 
+# backend (S3 & DynamoDB) for the terraform state.
+#
+
+###
+# Use remote state
+###
+export TERRAFORM_REMOTE_STATE="true"
+
+###
+# Name of the S3 bucket to use 
+###
+export TERRAFORM_STATE_S3_BUCKET_NAME="some_bucket"
+
+###
+# Path to state file in the S3 bucket
+###
+export TERRAFORM_STATE_S3_KEY="global/s3/terraform.tfstate"
+
+###
+# Region for S3 bucket
+###
+export TERRAFORM_STATE_S3_REGION="us-west-2"
+
+###
+# Name of the Dynamo DB table to use
+###
+export TERRAFORM_STATE_DYNAMODB_TABLE_NAME="tflocks"
+
