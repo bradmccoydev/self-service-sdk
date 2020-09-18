@@ -98,7 +98,7 @@ export SERVICE_ARTEFACTS_DUMP="true"
 ###
 # Use remote state
 ###
-export TERRAFORM_REMOTE_STATE="true"
+export TERRAFORM_REMOTE_STATE="false"
 
 ###
 # Name of the S3 bucket to use 
