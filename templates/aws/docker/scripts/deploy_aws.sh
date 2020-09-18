@@ -559,7 +559,7 @@ do_perform_tfapply() {
    cd ${DIR_TERRAFORM}
    if [[ ${VERBOSE} == "TRUE" ]]; then
       log_debug ""
-      terraform apply -input=false -auto-approve ${FILE_PATH_TF_PLAN_OUT}
+      terraform apply -input=false -auto-approve ${FILE_PATH_TF_PLAN_OUT} >> ${FILE_PATH_LOG} 2>&1
       RESULT=${?}
       log_debug ""
    else
@@ -630,6 +630,9 @@ if [[ ${MODE} != "DELETE" ]]; then
 
    # Perform terraform plan
    do_perform_tfplan
+
+   # Perform terraform apply
+   #do_perform_tfapply
 
 fi
 
