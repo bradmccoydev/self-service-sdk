@@ -141,9 +141,6 @@ log_info() {
 ###
 do_setup() {
 
-   # Log start
-   log_info 1 "Performing setup..."
-
    # Setup build directory
    if [[ -d ${DIR_BUILD} ]]; then
       rm -rf ${DIR_BUILD}
@@ -402,7 +399,7 @@ do_append_tfvar() {
 do_create_tfvars() {
 
    # Log start
-   log_info 1 "Creating terraform tfvars file..."
+   log_info 1 "Creating tfvars file..."
 
    # Delete file if it already exists
    if [[ -f ${FILE_PATH_TFVARS} ]]; then
@@ -454,7 +451,7 @@ do_append_backend() {
 do_create_tf_backend() {
 
    # Log start
-   log_info 1 "Creating terraform ${FILE_NAME_TF_BACKEND} file..."
+   log_info 1 "Creating ${FILE_NAME_TF_BACKEND} file..."
 
    # Delete file if it already exists
    if [[ -f ${FILE_PATH_TF_BACKEND} ]]; then
@@ -463,7 +460,7 @@ do_create_tf_backend() {
 
    # Remote or local backend?
    if [[ ${TERRAFORM_REMOTE_STATE,,} == "true" ]]; then
-      log_info 2 "Using remote AWS backend..."
+      log_info 2 "Using remote AWS backend for terraform state..."
       do_append_backend "terraform {" 
       do_append_backend "   backend \"s3\" {"  
       do_append_backend "      bucket = \"${TERRAFORM_STATE_S3_BUCKET_NAME}\""
@@ -474,7 +471,7 @@ do_create_tf_backend() {
       do_append_backend "   }" 
       do_append_backend "}" 
    else
-      log_info 2 "Using local backend..."
+      log_info 2 "Using local backend for terraform state..."
       do_append_backend "terraform {" 
       do_append_backend "   backend \"local\" {"  
       do_append_backend "   }" 
@@ -599,13 +596,13 @@ do
 done
 
 
+# Setup
+do_setup
+
 # Start processing
 log_info 0 ""
 log_info 0 "###################################################"
 log_info 0 "Start of processing..."
-
-# Setup
-do_setup
 
 # Load the values provided by the user
 do_load_values
@@ -635,7 +632,6 @@ if [[ ${MODE} != "DELETE" ]]; then
    do_perform_tfplan
 
 fi
-
 
 # Log finish
 log_info 0 "End of processing..."
