@@ -1,8 +1,8 @@
-# Use the specified Hashicorp Terraform version
+# Use the specified AWS Linux image
 FROM amazonlinux:2.0.20200722.0
 
 
-# Install required os components
+# Install required os utilities
 RUN yum install -y gzip tar wget unzip zip
 
 
