@@ -6,6 +6,8 @@ package dynamodb
 
 import (
 	"errors"
+	"reflect"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -50,6 +52,47 @@ func CreateItem(sess *session.Session, tableName string, input interface{}) erro
 
 	// Make the call to DynamoDB
 	_, err = svc.PutItem(params)
+
+	// Return
+	return err
+}
+
+// DeleteItem - This function deletes an item from the specified table
+//
+//   Parameters:
+//     sess: a valid AWS session
+//     tableName: the name of the table to delete the item from
+//     input: the structure containing the key values for the item to be deleted
+//
+//   Example:
+//     err := DeleteItem(mySession, "fred", myStruct)
+func DeleteItem(sess *session.Session, tableName string, input interface{}) error {
+
+	// Sanity check
+	if tableName == "" {
+		err := errors.New("Table name must be provided")
+		return err
+	}
+
+	// Create the DynamoDB client
+	svc := dynamodb.New(sess)
+
+	// Marshall the input
+	item, err := dynamodbattribute.MarshalMap(&input)
+
+	// If not ok then bail
+	if err != nil {
+		return err
+	}
+
+	// Build the delete params
+	params := &dynamodb.DeleteItemInput{
+		Key:       item,
+		TableName: aws.String(tableName),
+	}
+
+	// Make the call to DynamoDB
+	_, err = svc.DeleteItem(params)
 
 	// Return
 	return err
@@ -143,5 +186,82 @@ func ScanItems(sess *session.Session, tableName string, expr expression.Expressi
 
 	// Massage the result(s) & return
 	err = dynamodbattribute.UnmarshalListOfMaps(result.Items, &response)
+	return err
+}
+
+// UpdateItem - This function updates an item in the specified table
+//
+//   Parameters:
+//     sess: a valid AWS session
+//     tableName: the name of the table to update
+//     keys: the structure containing the item keys
+//     input: the structure containing the item properties to update
+//
+//   Example:
+//     err := UpdateItem(mySession, "fred", myStruct)
+func UpdateItem(sess *session.Session, tableName string, keys interface{}, input interface{}) error {
+
+	// Sanity check
+	if tableName == "" {
+		err := errors.New("Table name must be provided")
+		return err
+	}
+
+	// Create the DynamoDB client
+	svc := dynamodb.New(sess)
+
+	// Marshall the keys
+	itemKeys, err := dynamodbattribute.MarshalMap(&keys)
+
+	// If not ok then bail
+	if err != nil {
+		return err
+	}
+
+	// We need to iterate through the input interface fields
+	var update expression.UpdateBuilder
+	u := reflect.ValueOf(&input).Elem()
+	t := u.Type()
+	for i := 0; i < u.NumField(); i++ {
+
+		// Check if it is empty
+		f := u.Field(i)
+		if !reflect.DeepEqual(f.Interface(), reflect.Zero(f.Type()).Interface()) {
+
+			// Get json field name
+			jsonFieldName := t.Field(i).Name
+			if jsonTag := t.Field(i).Tag.Get("json"); jsonTag != "" && jsonTag != "-" {
+				if commaIdx := strings.Index(jsonTag, ","); commaIdx > 0 {
+					jsonFieldName = jsonTag[:commaIdx]
+				}
+			}
+			// Build the update definition
+			update = update.Set(expression.Name(jsonFieldName), expression.Value(f.Interface()))
+		}
+	}
+
+	// Create an update expression
+	builder := expression.NewBuilder().WithUpdate(update)
+	expression, err := builder.Build()
+
+	// If not ok then bail
+	if err != nil {
+		return err
+	}
+
+	// Build the update params
+	params := &dynamodb.UpdateItemInput{
+		Key:                       itemKeys,
+		ExpressionAttributeNames:  expression.Names(),
+		ExpressionAttributeValues: expression.Values(),
+		UpdateExpression:          expression.Update(),
+		ReturnValues:              aws.String("UPDATED_NEW"),
+		TableName:                 aws.String(tableName),
+	}
+
+	// Make the call to DynamoDB
+	_, err = svc.UpdateItem(params)
+
+	// Return
 	return err
 }
