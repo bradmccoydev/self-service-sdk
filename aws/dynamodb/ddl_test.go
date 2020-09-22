@@ -64,3 +64,41 @@ func TestCreateTable(t *testing.T) {
 		})
 	}
 }
+
+// Test DeleteTable
+func TestDeleteTable(t *testing.T) {
+
+	// Setup test data
+	tests := []struct {
+		desc      string
+		validSess bool
+		tableName string
+		expectErr bool
+	}{
+		{"No inputs", false, "", true},
+		{"Just session", true, "", true},
+		{"Session & invalid table name", true, "fredsmith", true},
+		{"Session & valid table name", true, "test", false},
+	}
+
+	// Iterate through the test data
+	for _, test := range tests {
+
+		t.Run(test.desc, func(t *testing.T) {
+
+			// Run the test
+			var sess *session.Session
+			if test.validSess {
+				sess = internal.CreateAwsSession(true)
+			} else {
+				sess = internal.CreateAwsSession(false)
+			}
+			err := dynamodb.DeleteTable(sess, test.tableName)
+			if test.expectErr {
+				internal.HasError(t, err)
+			} else {
+				internal.NoError(t, err)
+			}
+		})
+	}
+}

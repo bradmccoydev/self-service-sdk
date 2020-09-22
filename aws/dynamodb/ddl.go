@@ -37,7 +37,7 @@ type TableConf struct {
 //     attribs: an array of the attributes the table should have
 //
 //   Example:
-//     err := CreateTable(mySession, "fred", myStruct)
+//     err := CreateTable(mySession, tableConf, tableAttribs)
 func CreateTable(sess *session.Session, conf TableConf, attribs []TableAttributes) error {
 
 	// Sanity check
@@ -138,43 +138,33 @@ func CreateTable(sess *session.Session, conf TableConf, attribs []TableAttribute
 	return err
 }
 
-// // DeleteItem - This function deletes an item from the specified table
-// //
-// //   Parameters:
-// //     sess: a valid AWS session
-// //     tableName: the name of the table to delete the item from
-// //     input: the structure containing the key values for the item to be deleted
-// //
-// //   Example:
-// //     err := DeleteItem(mySession, "fred", myStruct)
-// func DeleteItem(sess *session.Session, tableName string, input interface{}) error {
+// DeleteTable - This function deletes the specified table from Dynamo DB
+//
+//   Parameters:
+//     sess: a valid AWS session
+//     tableName: the name of the table to delete
+//
+//   Example:
+//     err := DeleteTable(mySession, "fred")
+func DeleteTable(sess *session.Session, tableName string) error {
 
-// 	// Sanity check
-// 	if tableName == "" {
-// 		err := errors.New("Table name must be provided")
-// 		return err
-// 	}
+	// Sanity check
+	if tableName == "" {
+		err := errors.New("Table name must be provided")
+		return err
+	}
 
-// 	// Create the DynamoDB client
-// 	svc := dynamodb.New(sess)
+	// Build the delete table params
+	params := &dynamodb.DeleteTableInput{
+		TableName: aws.String(tableName),
+	}
 
-// 	// Marshall the input
-// 	item, err := dynamodbattribute.MarshalMap(&input)
+	// Create the DynamoDB client
+	svc := dynamodb.New(sess)
 
-// 	// If not ok then bail
-// 	if err != nil {
-// 		return err
-// 	}
+	// Make the call to DynamoDB
+	_, err := svc.DeleteTable(params)
 
-// 	// Build the delete params
-// 	params := &dynamodb.DeleteItemInput{
-// 		Key:       item,
-// 		TableName: aws.String(tableName),
-// 	}
-
-// 	// Make the call to DynamoDB
-// 	_, err = svc.DeleteItem(params)
-
-// 	// Return
-// 	return err
-// }
+	// Return
+	return err
+}
