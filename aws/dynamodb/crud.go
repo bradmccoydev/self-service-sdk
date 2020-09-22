@@ -33,9 +33,6 @@ func CreateItem(sess *session.Session, tableName string, input interface{}) erro
 		return err
 	}
 
-	// Create the DynamoDB client
-	svc := dynamodb.New(sess)
-
 	// Marshall the input
 	item, err := dynamodbattribute.MarshalMap(&input)
 
@@ -49,6 +46,9 @@ func CreateItem(sess *session.Session, tableName string, input interface{}) erro
 		Item:      item,
 		TableName: aws.String(tableName),
 	}
+
+	// Create the DynamoDB client
+	svc := dynamodb.New(sess)
 
 	// Make the call to DynamoDB
 	_, err = svc.PutItem(params)
@@ -74,9 +74,6 @@ func DeleteItem(sess *session.Session, tableName string, input interface{}) erro
 		return err
 	}
 
-	// Create the DynamoDB client
-	svc := dynamodb.New(sess)
-
 	// Marshall the input
 	item, err := dynamodbattribute.MarshalMap(&input)
 
@@ -90,6 +87,9 @@ func DeleteItem(sess *session.Session, tableName string, input interface{}) erro
 		Key:       item,
 		TableName: aws.String(tableName),
 	}
+
+	// Create the DynamoDB client
+	svc := dynamodb.New(sess)
 
 	// Make the call to DynamoDB
 	_, err = svc.DeleteItem(params)
@@ -120,9 +120,6 @@ func QueryItems(sess *session.Session, tableName string, expr expression.Express
 		return err
 	}
 
-	// Create the DynamoDB client
-	svc := dynamodb.New(sess)
-
 	// Build the query params
 	params := &dynamodb.QueryInput{
 		ExpressionAttributeNames:  expr.Names(),
@@ -132,6 +129,9 @@ func QueryItems(sess *session.Session, tableName string, expr expression.Express
 		ProjectionExpression:      expr.Projection(),
 		TableName:                 aws.String(tableName),
 	}
+
+	// Create the DynamoDB client
+	svc := dynamodb.New(sess)
 
 	// Make the call to DynamoDB
 	result, err := svc.Query(params)
@@ -164,9 +164,6 @@ func ScanItems(sess *session.Session, tableName string, expr expression.Expressi
 		return err
 	}
 
-	// Create the DynamoDB client
-	svc := dynamodb.New(sess)
-
 	// Build the query params
 	params := &dynamodb.ScanInput{
 		ExpressionAttributeNames:  expr.Names(),
@@ -175,6 +172,9 @@ func ScanItems(sess *session.Session, tableName string, expr expression.Expressi
 		ProjectionExpression:      expr.Projection(),
 		TableName:                 aws.String(tableName),
 	}
+
+	// Create the DynamoDB client
+	svc := dynamodb.New(sess)
 
 	// Make the call to DynamoDB
 	result, err := svc.Scan(params)
@@ -206,9 +206,6 @@ func UpdateItem(sess *session.Session, tableName string, keys interface{}, input
 		err := errors.New("Table name must be provided")
 		return err
 	}
-
-	// Create the DynamoDB client
-	svc := dynamodb.New(sess)
 
 	// Marshall the keys
 	itemKeys, err := dynamodbattribute.MarshalMap(&keys)
@@ -258,6 +255,9 @@ func UpdateItem(sess *session.Session, tableName string, keys interface{}, input
 		ReturnValues:              aws.String("UPDATED_NEW"),
 		TableName:                 aws.String(tableName),
 	}
+
+	// Create the DynamoDB client
+	svc := dynamodb.New(sess)
 
 	// Make the call to DynamoDB
 	_, err = svc.UpdateItem(params)

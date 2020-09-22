@@ -84,13 +84,15 @@ func GetTableDetails(sess *session.Session, tableName string) (*dynamodb.Describ
 		return nil, err
 	}
 
+	// Create a basic input structure for the request
+	params := &dynamodb.DescribeTableInput{}
+	params = params.SetTableName(tableName)
+
 	// Create the DynamoDB client
 	svc := dynamodb.New(sess)
 
 	// Make the call to DynamoDB
-	request := &dynamodb.DescribeTableInput{}
-	request.SetTableName(tableName)
-	result, err := svc.DescribeTable(request)
+	result, err := svc.DescribeTable(params)
 
 	// If not ok then bail
 	if err != nil {
@@ -114,8 +116,8 @@ func GetTableList(sess *session.Session) ([]string, error) {
 	svc := dynamodb.New(sess)
 
 	// Make the call to DynamoDB
-	request := &dynamodb.ListTablesInput{}
-	result, err := svc.ListTables(request)
+	params := &dynamodb.ListTablesInput{}
+	result, err := svc.ListTables(params)
 
 	// If not ok then bail
 	if err != nil {

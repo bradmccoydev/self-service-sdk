@@ -8,14 +8,20 @@ import (
 	"github.com/bradmccoydev/self-service-sdk/internal"
 )
 
-// ServiceItem represents an item from the service table
-type ServiceItem struct {
+// TestTableItem represents an item from the service table
+type TestTableItem struct {
 	Service       string `json:"service"`
 	Version       string `json:"version"`
 	Title         string `json:"title"`
 	Description   string `json:"description"`
 	Documentation string `json:"documentation"`
 	Type          string `json:"type"`
+}
+
+// TestTableKeys represents the key fields for the test table
+type TestTableKeys struct {
+	Service string `json:"service"`
+	Version string `json:"version"`
 }
 
 // Global variable for AWS credentials
