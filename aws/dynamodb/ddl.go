@@ -4,13 +4,25 @@
 package dynamodb
 
 import (
-	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
+)
+
+const (
+	// BillingModePayPerRequest - Pay per request billing mode
+	BillingModePayPerRequest string = "PAY_PER_REQUEST"
+
+	// BillingModeProvisioned - Provisioned billing mode
+	BillingModeProvisioned string = "PROVISIONED"
+
+	// KeyTypePartition - "partition" key
+	KeyTypePartition string = "HASH"
+
+	// KeyTypeSort - "sort" key
+	KeyTypeSort string = "RANGE"
 )
 
 // TableAttributes - structure used to represent table attributes
@@ -42,16 +54,13 @@ func CreateTable(sess *session.Session, conf TableConf, attribs []TableAttribute
 
 	// Sanity check
 	if conf.TableName == "" {
-		err := errors.New("Table name must be provided")
-		return err
+		return newErrorTableNameNotProvided()
 	}
 	if conf.BillingMode == "" {
-		err := errors.New("Billing mode must be provided")
-		return err
+		return newErrorBillingModeNotProvided()
 	}
 	if len(attribs) == 0 {
-		err := errors.New("Table attributes must be provided")
-		return err
+		return newErrorTableAttributesNotProvided()
 	}
 
 	// Setup Dyanmo objects that we need
@@ -64,12 +73,10 @@ func CreateTable(sess *session.Session, conf TableConf, attribs []TableAttribute
 
 		// Sanity checks
 		if a.Name == "" {
-			err := errors.New("Table attribute must have a name")
-			return err
+			return newErrorTableAttributeNameNotProvided()
 		}
 		if a.Type == "" {
-			err := errors.New("Table attribute must have a type")
-			return err
+			return newErrorTableAttributeTypeNotProvided()
 		}
 
 		// Add the attribute definition
@@ -84,8 +91,7 @@ func CreateTable(sess *session.Session, conf TableConf, attribs []TableAttribute
 
 			// Make sure we have a key type
 			if a.KeyType == "" {
-				err := fmt.Errorf("The key field %s did not include a key type", a.Name)
-				return err
+				return newErrorTableKeyFieldKeyTypeNotProvided(a.Name)
 			}
 
 			// Add the key element
@@ -100,8 +106,7 @@ func CreateTable(sess *session.Session, conf TableConf, attribs []TableAttribute
 
 	// Check we have at least one key
 	if havekey == false {
-		err := errors.New("No key attributes were provided")
-		return err
+		return newErrorTableKeyAttributesNotProvided()
 	}
 
 	// Create a basic input structure for the request
@@ -120,7 +125,7 @@ func CreateTable(sess *session.Session, conf TableConf, attribs []TableAttribute
 	params = params.SetBillingMode(conf.BillingMode)
 
 	// Add the capacity units if billing mode is provisioned
-	if strings.ToUpper(conf.BillingMode) == "PROVISIONED" {
+	if strings.ToUpper(conf.BillingMode) == BillingModeProvisioned {
 		thruput := dynamodb.ProvisionedThroughput{
 			ReadCapacityUnits:  &conf.ReadCapacityUnits,
 			WriteCapacityUnits: &conf.WriteCapacityUnits,
@@ -150,8 +155,7 @@ func DeleteTable(sess *session.Session, tableName string) error {
 
 	// Sanity check
 	if tableName == "" {
-		err := errors.New("Table name must be provided")
-		return err
+		return newErrorTableNameNotProvided()
 	}
 
 	// Build the delete table params

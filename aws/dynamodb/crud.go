@@ -5,7 +5,6 @@
 package dynamodb
 
 import (
-	"errors"
 	"reflect"
 	"strings"
 
@@ -29,8 +28,7 @@ func CreateItem(sess *session.Session, tableName string, input interface{}) erro
 
 	// Sanity check
 	if tableName == "" {
-		err := errors.New("Table name must be provided")
-		return err
+		return newErrorTableNameNotProvided()
 	}
 
 	// Marshall the input
@@ -70,8 +68,7 @@ func DeleteItem(sess *session.Session, tableName string, input interface{}) erro
 
 	// Sanity check
 	if tableName == "" {
-		err := errors.New("Table name must be provided")
-		return err
+		return newErrorTableNameNotProvided()
 	}
 
 	// Marshall the input
@@ -112,12 +109,10 @@ func QueryItems(sess *session.Session, tableName string, expr expression.Express
 
 	// Sanity check
 	if tableName == "" {
-		err := errors.New("Table name must be provided")
-		return err
+		return newErrorTableNameNotProvided()
 	}
 	if expr.KeyCondition() == nil {
-		err := errors.New("A key condition must be provided in the expression")
-		return err
+		return newErrorExpressionKeyNotProvided()
 	}
 
 	// Build the query params
@@ -160,8 +155,7 @@ func ScanItems(sess *session.Session, tableName string, expr expression.Expressi
 
 	// Sanity check
 	if tableName == "" {
-		err := errors.New("Table name must be provided")
-		return err
+		return newErrorTableNameNotProvided()
 	}
 
 	// Build the query params
@@ -203,8 +197,7 @@ func UpdateItem(sess *session.Session, tableName string, keys interface{}, input
 
 	// Sanity check
 	if tableName == "" {
-		err := errors.New("Table name must be provided")
-		return err
+		return newErrorTableNameNotProvided()
 	}
 
 	// Marshall the keys

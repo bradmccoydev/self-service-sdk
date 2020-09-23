@@ -88,6 +88,12 @@ func TestDeleteTable(t *testing.T) {
 		{"Session & valid table name", true, TestTableNameValid, false},
 	}
 
+	// Ensure table exists
+	createerr := CreateTableIfNotExists(TestTableConf)
+	if createerr != nil {
+		log.Fatal(createerr)
+	}
+
 	// Iterate through the test data
 	for _, test := range tests {
 

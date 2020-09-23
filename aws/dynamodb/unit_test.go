@@ -1,7 +1,7 @@
 package dynamodb_test
 
 import (
-	"errors"
+	"log"
 	"os"
 	"testing"
 
@@ -35,18 +35,33 @@ var TestTableKeys = []dynamodb.TableAttributes{
 		Name:    "name",
 		Type:    "S",
 		IsKey:   true,
-		KeyType: "HASH",
+		KeyType: dynamodb.KeyTypePartition,
 	},
+}
+
+// TestTableConf represents the test table configuration
+var TestTableConf = dynamodb.TableConf{
+	TableName:          TestTableNameValid,
+	BillingMode:        dynamodb.BillingModePayPerRequest,
+	ReadCapacityUnits:  0,
+	WriteCapacityUnits: 0,
+}
+
+// CreateTableIfNotExists
+func CreateTableIfNotExists(tableConf dynamodb.TableConf) error {
+
+	// If the table doesn't exist then create it
+	sess := internal.CreateAwsSession(true)
+	exists, _ := dynamodb.TableExists(sess, tableConf.TableName)
+	var err error
+	if exists == false {
+		err = dynamodb.CreateTable(sess, tableConf, TestTableKeys)
+	}
+	return err
 }
 
 // DeleteTableIfExists
 func DeleteTableIfExists(tableName string) error {
-
-	// Sanity check
-	if tableName == "" {
-		err := errors.New("Table name must be provided")
-		return err
-	}
 
 	// If the table exists then delete it
 	sess := internal.CreateAwsSession(true)
@@ -64,6 +79,7 @@ func TestMain(m *testing.M) {
 	// Do we need to do these tests?
 	var doTests bool = internal.PerformAwsTests()
 	if doTests == false {
+		log.Printf("AWS testing variable: %s not set or set to false", internal.TestAwsEnabled)
 		os.Exit(0)
 	}
 
