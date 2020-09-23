@@ -1,6 +1,7 @@
 package dynamodb_test
 
 import (
+	"log"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -44,7 +45,10 @@ func TestCreateTable(t *testing.T) {
 	}
 
 	// Ensure table doesn't exist
-	//arn := dynamodb.GetTa
+	delerr := DeleteTableIfExists(TestTableNameValid)
+	if delerr != nil {
+		log.Fatal(delerr)
+	}
 
 	// Iterate through the test data
 	for _, test := range tests {

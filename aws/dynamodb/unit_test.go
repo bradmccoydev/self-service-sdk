@@ -1,6 +1,7 @@
 package dynamodb_test
 
 import (
+	"errors"
 	"os"
 	"testing"
 
@@ -36,6 +37,25 @@ var TestTableKeys = []dynamodb.TableAttributes{
 		IsKey:   true,
 		KeyType: "HASH",
 	},
+}
+
+// DeleteTableIfExists
+func DeleteTableIfExists(tableName string) error {
+
+	// Sanity check
+	if tableName == "" {
+		err := errors.New("Table name must be provided")
+		return err
+	}
+
+	// If the table exists then delete it
+	sess := internal.CreateAwsSession(true)
+	exists, _ := dynamodb.TableExists(sess, TestTableNameValid)
+	var err error
+	if exists {
+		err = dynamodb.DeleteTable(sess, tableName)
+	}
+	return err
 }
 
 // TestMain routine for controlling setup/destruction for all tests in this package
