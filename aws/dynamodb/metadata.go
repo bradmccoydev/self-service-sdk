@@ -6,6 +6,7 @@ package dynamodb
 import (
 	"errors"
 
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 )
@@ -17,7 +18,7 @@ import (
 //     tableName: the name of the table to
 //
 //   Example:
-//     GetTableArn(mySession, "fred")
+//     val, err := GetTableArn(mySession, "fred")
 func GetTableArn(sess *session.Session, tableName string) (*string, error) {
 
 	// Get the table details
@@ -46,7 +47,7 @@ func GetTableArn(sess *session.Session, tableName string) (*string, error) {
 //     tableName: the name of the table to
 //
 //   Example:
-//     GetTableArn(mySession, "fred")
+//     count, err := GetTableItemCount(mySession, "fred")
 func GetTableItemCount(sess *session.Session, tableName string) (*int64, error) {
 
 	// Get the table details
@@ -75,7 +76,7 @@ func GetTableItemCount(sess *session.Session, tableName string) (*int64, error) 
 //     tableName: the name of the table to
 //
 //   Example:
-//     arn, err := GetTableArn(mySession, "fred")
+//     info, err := GetTableDetails(mySession, "fred")
 func GetTableDetails(sess *session.Session, tableName string) (*dynamodb.DescribeTableOutput, error) {
 
 	// Sanity check
@@ -109,7 +110,7 @@ func GetTableDetails(sess *session.Session, tableName string) (*dynamodb.Describ
 //     sess: a valid AWS session
 //
 //   Example:
-//     tables, err := GetTableArn(mySession)
+//     tables, err := GetTableList(mySession)
 func GetTableList(sess *session.Session) ([]string, error) {
 
 	// Create the DynamoDB client
@@ -132,4 +133,36 @@ func GetTableList(sess *session.Session) ([]string, error) {
 
 	// Return it
 	return response, nil
+}
+
+// TableExists - This function checks if the specified table exists
+//
+//   Parameters:
+//     sess: a valid AWS session
+//     tableName: the name of the table to check
+//
+//   Example:
+//     val, err := TableExists(mySession, "fred")
+func TableExists(sess *session.Session, tableName string) (bool, error) {
+
+	// Get the table details
+	_, err := GetTableDetails(sess, tableName)
+	if err != nil {
+
+		// Check error details to check if "real" error
+		if aerr, ok := err.(awserr.Error); ok {
+			switch aerr.Code() {
+			case dynamodb.ErrCodeResourceNotFoundException:
+				return false, nil
+			default:
+				return false, err
+			}
+		}
+
+		//if err.
+		return false, err
+	}
+
+	// Return it
+	return true, nil
 }

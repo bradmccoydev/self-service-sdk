@@ -16,9 +16,9 @@ func TestCreateItem(t *testing.T) {
 	// Setup input test data
 	timeStamp := time.Now().Format(time.RFC3339)
 	emptyInput := TestTableItem{}
-	noKey := TestTableItem{Title: "Fred"}
-	emptyKey := TestTableItem{Service: "", Title: "Fred"}
-	validInput := TestTableItem{Service: "Fred", Version: timeStamp, Title: "Fred"}
+	noKey := TestTableItem{Description: "Fred"}
+	emptyKey := TestTableItem{Name: "", Description: "Fred"}
+	validInput := TestTableItem{Name: "Fred", Description: timeStamp}
 
 	// Setup test data
 	tests := []struct {
@@ -30,11 +30,11 @@ func TestCreateItem(t *testing.T) {
 	}{
 		{"No inputs", false, "", emptyInput, true},
 		{"Just session", true, "", emptyInput, true},
-		{"Session & invalid table name", true, "fred", emptyInput, true},
-		{"Session & valid table name", true, "service", emptyInput, true},
-		{"Session, valid table name & no key", true, "service", noKey, true},
-		{"Session, valid table name & empty key", true, "service", emptyKey, true},
-		{"Valid input", true, "service", validInput, false},
+		{"Session & invalid table name", true, TestTableNameInvalid, emptyInput, true},
+		{"Session & valid table name", true, TestTableNameValid, emptyInput, true},
+		{"Session, valid table name & no key", true, TestTableNameValid, noKey, true},
+		{"Session, valid table name & empty key", true, TestTableNameValid, emptyKey, true},
+		{"Valid input", true, TestTableNameValid, validInput, false},
 	}
 
 	// Iterate through the test data
@@ -65,9 +65,9 @@ func TestDeleteItem(t *testing.T) {
 	// Setup input test data
 	timeStamp := time.Now().Format(time.RFC3339)
 	emptyInput := TestTableItem{}
-	noKey := TestTableItem{Title: "Fred"}
-	emptyKey := TestTableItem{Service: "", Title: "Fred"}
-	validInput := TestTableItem{Service: "Fred", Version: timeStamp, Title: "Fred"}
+	noKey := TestTableItem{Description: "Fred"}
+	emptyKey := TestTableItem{Name: "", Description: "Fred"}
+	validInput := TestTableItem{Name: "Fred", Description: timeStamp}
 
 	// Setup test data
 	tests := []struct {
@@ -79,11 +79,11 @@ func TestDeleteItem(t *testing.T) {
 	}{
 		{"No inputs", false, "", emptyInput, true},
 		{"Just session", true, "", emptyInput, true},
-		{"Session & invalid table name", true, "fred", emptyInput, true},
-		{"Session & valid table name", true, "service", emptyInput, true},
-		{"Session, valid table name & no key", true, "service", noKey, true},
-		{"Session, valid table name & empty key", true, "service", emptyKey, true},
-		{"Valid input", true, "service", validInput, false},
+		{"Session & invalid table name", true, TestTableNameInvalid, emptyInput, true},
+		{"Session & valid table name", true, TestTableNameValid, emptyInput, true},
+		{"Session, valid table name & no key", true, TestTableNameValid, noKey, true},
+		{"Session, valid table name & empty key", true, TestTableNameValid, emptyKey, true},
+		{"Valid input", true, TestTableNameValid, validInput, false},
 	}
 
 	// Iterate through the test data
@@ -116,9 +116,9 @@ func TestQueryItems(t *testing.T) {
 
 	// Setup key condition test data
 	var emptyKey []dynamodb.Condition
-	invalidKeyField := []dynamodb.Condition{{Field: "fred", Operator: "EQ", Value: "123"}}
-	invalidKeyVal := []dynamodb.Condition{{Field: "service", Operator: "EQ", Value: "123"}}
-	validKey := []dynamodb.Condition{{Field: "service", Operator: "EQ", Value: "123"}}
+	invalidKeyField := []dynamodb.Condition{{Field: TestTableKeyFieldInvalid, Operator: "EQ", Value: "123"}}
+	invalidKeyVal := []dynamodb.Condition{{Field: TestTableKeyFieldValid, Operator: "EQ", Value: "123"}}
+	validKey := []dynamodb.Condition{{Field: TestTableKeyFieldValid, Operator: "EQ", Value: "123"}}
 
 	// Setup expression test data
 	var emptyExpression expression.Expression
@@ -137,12 +137,12 @@ func TestQueryItems(t *testing.T) {
 	}{
 		{"No inputs", false, "", emptyExpression, true},
 		{"Just session", true, "", emptyExpression, true},
-		{"Session & invalid table name", true, "fred", emptyExpression, true},
-		{"Session & valid table name", true, "service", emptyKeyExpr, true},
-		{"Session, valid table name & empty key", true, "service", emptyExpression, true},
-		{"Session, valid table name & invalid key field", true, "service", invalidKeyFieldExpr, true},
-		{"Session, valid table name & invalid key value", true, "service", invalidKeyValueExpr, false},
-		{"Session, valid table name & valid key", true, "service", validKeyExpr, false},
+		{"Session & invalid table name", true, TestTableNameInvalid, emptyExpression, true},
+		{"Session & valid table name", true, TestTableNameValid, emptyKeyExpr, true},
+		{"Session, valid table name & empty key", true, TestTableNameValid, emptyExpression, true},
+		{"Session, valid table name & invalid key field", true, TestTableNameValid, invalidKeyFieldExpr, true},
+		{"Session, valid table name & invalid key value", true, TestTableNameValid, invalidKeyValueExpr, false},
+		{"Session, valid table name & valid key", true, TestTableNameValid, validKeyExpr, false},
 	}
 
 	// Iterate through the test data
@@ -174,8 +174,8 @@ func TestScanItems(t *testing.T) {
 	var response *[]TestTableItem
 
 	// Setup filter test data
-	invalidFilter := []dynamodb.Condition{{Field: "fred", Operator: "EQ", Value: "123"}}
-	validFilter := []dynamodb.Condition{{Field: "service", Operator: "EQ", Value: "123"}}
+	invalidFilter := []dynamodb.Condition{{Field: TestTableKeyFieldInvalid, Operator: "EQ", Value: "123"}}
+	validFilter := []dynamodb.Condition{{Field: TestTableKeyFieldValid, Operator: "EQ", Value: "123"}}
 
 	// Setup expression test data
 	var emptyExpression expression.Expression
@@ -192,10 +192,10 @@ func TestScanItems(t *testing.T) {
 	}{
 		{"No inputs", false, "", emptyExpression, true},
 		{"Just session", true, "", emptyExpression, true},
-		{"Session & invalid table name", true, "fred", emptyExpression, true},
-		{"Session & valid table name", true, "service", emptyExpression, false},
-		{"Session, valid table name & invalid filter", true, "service", invalidFilterExpr, false},
-		{"Session, valid table name & valid filter", true, "service", validFilterExpr, false},
+		{"Session & invalid table name", true, TestTableNameInvalid, emptyExpression, true},
+		{"Session & valid table name", true, TestTableNameValid, emptyExpression, false},
+		{"Session, valid table name & invalid filter", true, TestTableNameValid, invalidFilterExpr, false},
+		{"Session, valid table name & valid filter", true, TestTableNameValid, validFilterExpr, false},
 	}
 
 	// Iterate through the test data

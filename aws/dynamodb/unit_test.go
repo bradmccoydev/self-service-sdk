@@ -1,31 +1,42 @@
 package dynamodb_test
 
 import (
-	"log"
 	"os"
 	"testing"
 
+	"github.com/bradmccoydev/self-service-sdk/aws/dynamodb"
 	"github.com/bradmccoydev/self-service-sdk/internal"
+)
+
+const (
+	// The valid testing table name
+	TestTableNameValid string = "testing"
+
+	// An invalid testing table name
+	TestTableNameInvalid string = "garbage"
+
+	// The valid testing table key field
+	TestTableKeyFieldValid string = "name"
+
+	// An invalid testing table name
+	TestTableKeyFieldInvalid string = "garbage"
 )
 
 // TestTableItem represents an item from the service table
 type TestTableItem struct {
-	Service       string `json:"service"`
-	Version       string `json:"version"`
-	Title         string `json:"title"`
-	Description   string `json:"description"`
-	Documentation string `json:"documentation"`
-	Type          string `json:"type"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
 }
 
-// TestTableKeys represents the key fields for the test table
-type TestTableKeys struct {
-	Service string `json:"service"`
-	Version string `json:"version"`
+// TestTableAttribs represents the test table attributes
+var TestTableKeys = []dynamodb.TableAttributes{
+	{
+		Name:    "name",
+		Type:    "S",
+		IsKey:   true,
+		KeyType: "HASH",
+	},
 }
-
-// Global variable for AWS credentials
-var AwsCreds internal.AwsCreds
 
 // TestMain routine for controlling setup/destruction for all tests in this package
 func TestMain(m *testing.M) {
@@ -34,13 +45,6 @@ func TestMain(m *testing.M) {
 	var doTests bool = internal.PerformAwsTests()
 	if doTests == false {
 		os.Exit(0)
-	}
-
-	// Set the global variable to make the values available for all tests
-	var err error = nil
-	AwsCreds, err = internal.LoadAwsCreds()
-	if err != nil {
-		log.Fatal(err)
 	}
 
 	// Run the various tests then exit

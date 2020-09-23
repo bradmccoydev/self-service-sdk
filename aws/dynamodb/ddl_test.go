@@ -13,16 +13,16 @@ func TestCreateTable(t *testing.T) {
 
 	// Setup conf test data
 	var emptyConf dynamodb.TableConf
-	confNoMode := dynamodb.TableConf{TableName: "test", BillingMode: "", ReadCapacityUnits: 0, WriteCapacityUnits: 0}
-	validConf := dynamodb.TableConf{TableName: "test", BillingMode: "PAY_PER_REQUEST", ReadCapacityUnits: 0, WriteCapacityUnits: 0}
+	confNoMode := dynamodb.TableConf{TableName: TestTableNameValid, BillingMode: "", ReadCapacityUnits: 0, WriteCapacityUnits: 0}
+	validConf := dynamodb.TableConf{TableName: TestTableNameValid, BillingMode: "PAY_PER_REQUEST", ReadCapacityUnits: 0, WriteCapacityUnits: 0}
 
 	// Setup attribute test data
 	var emptyInput []dynamodb.TableAttributes
 	attribNoName := []dynamodb.TableAttributes{{Name: "", Type: "", IsKey: false, KeyType: ""}}
-	attribNoType := []dynamodb.TableAttributes{{Name: "fred", Type: "", IsKey: false, KeyType: ""}}
-	attribNoKey := []dynamodb.TableAttributes{{Name: "fred", Type: "S", IsKey: false, KeyType: ""}}
-	attribKeyNoType := []dynamodb.TableAttributes{{Name: "fred", Type: "S", IsKey: true, KeyType: ""}}
-	attribWithKey := []dynamodb.TableAttributes{{Name: "fred", Type: "S", IsKey: true, KeyType: "HASH"}}
+	attribNoType := []dynamodb.TableAttributes{{Name: TestTableKeyFieldValid, Type: "", IsKey: false, KeyType: ""}}
+	attribNoKey := []dynamodb.TableAttributes{{Name: TestTableKeyFieldValid, Type: "S", IsKey: false, KeyType: ""}}
+	attribKeyNoType := []dynamodb.TableAttributes{{Name: TestTableKeyFieldValid, Type: "S", IsKey: true, KeyType: ""}}
+	attribWithKey := []dynamodb.TableAttributes{{Name: TestTableKeyFieldValid, Type: "S", IsKey: true, KeyType: "HASH"}}
 
 	// Setup test data
 	tests := []struct {
@@ -42,6 +42,9 @@ func TestCreateTable(t *testing.T) {
 		{"Session, table name & key attribute without a type", true, validConf, attribKeyNoType, true},
 		{"Session, table name & full key attribute", true, validConf, attribWithKey, false},
 	}
+
+	// Ensure table doesn't exist
+	//arn := dynamodb.GetTa
 
 	// Iterate through the test data
 	for _, test := range tests {
@@ -77,8 +80,8 @@ func TestDeleteTable(t *testing.T) {
 	}{
 		{"No inputs", false, "", true},
 		{"Just session", true, "", true},
-		{"Session & invalid table name", true, "fredsmith", true},
-		{"Session & valid table name", true, "test", false},
+		{"Session & invalid table name", true, TestTableNameInvalid, true},
+		{"Session & valid table name", true, TestTableNameValid, false},
 	}
 
 	// Iterate through the test data

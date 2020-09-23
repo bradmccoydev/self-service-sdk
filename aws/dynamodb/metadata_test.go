@@ -140,3 +140,43 @@ func TestGetTableList(t *testing.T) {
 		})
 	}
 }
+
+// Test TableExists
+func TestTableExists(t *testing.T) {
+
+	// Setup test data
+	tests := []struct {
+		desc        string
+		validSess   bool
+		tableName   string
+		expectFound bool
+		expectErr   bool
+	}{
+		{"No session", false, "", false, true},
+		{"With session but no table name", true, "", false, true},
+		{"With session and invalid table name", true, TestTableNameInvalid, false, false},
+		{"With session and valid table name", true, TestTableNameValid, true, false},
+	}
+
+	// Iterate through the test data
+	for _, test := range tests {
+
+		t.Run(test.desc, func(t *testing.T) {
+
+			// Run the test
+			var sess *session.Session
+			if test.validSess {
+				sess = internal.CreateAwsSession(true)
+			} else {
+				sess = internal.CreateAwsSession(false)
+			}
+			actual, err := dynamodb.TableExists(sess, test.tableName)
+			if test.expectErr {
+				internal.HasError(t, err)
+			} else {
+				internal.NoError(t, err)
+				internal.Equals(t, test.expectFound, actual)
+			}
+		})
+	}
+}
