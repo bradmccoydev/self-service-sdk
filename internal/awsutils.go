@@ -11,15 +11,15 @@ import (
 )
 
 const (
-	// Environment variable for AWS key
+	// EnvAwsKey - the env var for the AWS key
 	EnvAwsKey string = "AWS_ACCESS_KEY_ID"
-	// Environment variable for AWS Secret
+	// EnvAwsSecret - the env var for the AWS Secret
 	EnvAwsSecret string = "AWS_SECRET_ACCESS_KEY"
-	// Environment variable for AWS default region
+	// EnvAwsDefRegion - the env var for the AWS default region
 	EnvAwsDefRegion string = "AWS_DEFAULT_REGION"
-	// Environment variable for AWS region
+	// EnvAwsRegion - the env var for the AWS region
 	EnvAwsRegion string = "AWS_REGION"
-	// Environment variable for AWS session token
+	// EnvAwsSessionToken - the env var for the AWS session token
 	EnvAwsSessionToken string = "AWS_SESSION_TOKEN"
 	// Environment variable for determining whether to run AWS related tests
 	testAwsEnabled string = "TESTING_AWS_ENABLED"
@@ -30,10 +30,10 @@ const (
 	// Environment variable for ***PASSING IN*** a valid AWS region
 	testValidAwsRegion string = "TESTING_AWS_DEFAULT_REGION"
 	// Environment variable for ***PASSING IN*** a valid AWS user id
-	testValidAwsUserId string = "TESTING_AWS_USER_ID"
+	testValidAwsUserID string = "TESTING_AWS_USER_ID"
 )
 
-// Common structure for managing credentials
+// AwsCreds - Structure for handling AWS credentials
 type AwsCreds struct {
 	Key    string
 	Secret string
@@ -90,22 +90,22 @@ func LoadAwsCreds() (AwsCreds, error) {
 	var err error = nil
 	key := os.Getenv(testValidAwsKey)
 	if key == "" {
-		err = errors.New("The environment variable TESTING_AWS_ACCESS_KEY_ID is not set!!!")
+		err = errors.New("The environment variable TESTING_AWS_ACCESS_KEY_ID is not set")
 		return values, err
 	}
 	secret := os.Getenv(testValidAwsSecret)
 	if secret == "" {
-		err = errors.New("The environment variable TESTING_AWS_SECRET_ACCESS_KEY is not set!!!")
+		err = errors.New("The environment variable TESTING_AWS_SECRET_ACCESS_KEY is not set")
 		return values, err
 	}
 	region := os.Getenv(testValidAwsRegion)
 	if region == "" {
-		err = errors.New("The environment variable TESTING_AWS_DEFAULT_REGION is not set!!!")
+		err = errors.New("The environment variable TESTING_AWS_DEFAULT_REGION is not set")
 		return values, err
 	}
-	userid := os.Getenv(testValidAwsUserId)
+	userid := os.Getenv(testValidAwsUserID)
 	if userid == "" {
-		err = errors.New("The environment variable TESTING_AWS_USER_ID is not set!!!")
+		err = errors.New("The environment variable TESTING_AWS_USER_ID is not set")
 		return values, err
 	}
 
