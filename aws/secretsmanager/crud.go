@@ -1,3 +1,7 @@
+// This file contains all the bits & pieces related to
+// creating, reading updating & deleting secrets from
+// Secrets Manager
+
 package secretsmanager
 
 import (
@@ -17,14 +21,21 @@ type SecretKeyValue struct {
 // getSecret - This function provides a generic routine to retrieve a secret
 func getSecret(sess *session.Session, secretName string) (*secretsmanager.GetSecretValueOutput, error) {
 
+	// Sanity check
+	if secretName == "" {
+		return nil, newErrorSecretNameNotProvided()
+	}
+
+	// Build the input params
+	params := &secretsmanager.GetSecretValueInput{
+		SecretId: aws.String(secretName),
+	}
+
 	// Create the Secrets Manager client
 	svc := secretsmanager.New(sess)
 
 	// Make the call to Secrets Manager
-	request := &secretsmanager.GetSecretValueInput{
-		SecretId: aws.String(secretName),
-	}
-	result, err := svc.GetSecretValue(request)
+	result, err := svc.GetSecretValue(params)
 
 	// Return the result
 	return result, err
