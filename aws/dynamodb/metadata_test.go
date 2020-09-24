@@ -1,6 +1,7 @@
 package dynamodb_test
 
 import (
+	"log"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -11,14 +12,20 @@ import (
 // Test GetTableArn
 func TestGetTableArn(t *testing.T) {
 
+	// Setup backend
+	createerr := CreateTableIfNotExists(TestTableConf)
+	if createerr != nil {
+		log.Fatal(createerr)
+	}
+
 	// Setup test data
 	tests := []struct {
 		desc      string
 		tableName string
 		expectErr bool
 	}{
-		{"Invalid table name", "FredSmith", true},
-		{"Valid table name", "service", false},
+		{"Invalid table name", TestTableNameInvalid, true},
+		{"Valid table name", TestTableNameValid, false},
 	}
 
 	// Iterate through the test data
@@ -41,14 +48,20 @@ func TestGetTableArn(t *testing.T) {
 // Test GetTableItemCount
 func TestGetTableItemCount(t *testing.T) {
 
+	// Setup backend
+	createerr := CreateTableIfNotExists(TestTableConf)
+	if createerr != nil {
+		log.Fatal(createerr)
+	}
+
 	// Setup test data
 	tests := []struct {
 		desc      string
 		tableName string
 		expectErr bool
 	}{
-		{"Invalid table name", "FredSmith", true},
-		{"Valid table name", "service", false},
+		{"Invalid table name", TestTableNameInvalid, true},
+		{"Valid table name", TestTableNameValid, false},
 	}
 
 	// Iterate through the test data
@@ -71,6 +84,12 @@ func TestGetTableItemCount(t *testing.T) {
 // Test GetTableDetails
 func TestGetTableDetails(t *testing.T) {
 
+	// Setup backend
+	createerr := CreateTableIfNotExists(TestTableConf)
+	if createerr != nil {
+		log.Fatal(createerr)
+	}
+
 	// Setup test data
 	tests := []struct {
 		desc      string
@@ -80,8 +99,8 @@ func TestGetTableDetails(t *testing.T) {
 	}{
 		{"No session", false, "", true},
 		{"With session but no table name", true, "", true},
-		{"With session and invalid table name", true, "FredSmith", true},
-		{"With session and valid table name", true, "service", false},
+		{"With session and invalid table name", true, TestTableNameInvalid, true},
+		{"With session and valid table name", true, TestTableNameValid, false},
 	}
 
 	// Iterate through the test data
@@ -143,6 +162,12 @@ func TestGetTableList(t *testing.T) {
 
 // Test TableExists
 func TestTableExists(t *testing.T) {
+
+	// Setup backend
+	createerr := CreateTableIfNotExists(TestTableConf)
+	if createerr != nil {
+		log.Fatal(createerr)
+	}
 
 	// Setup test data
 	tests := []struct {

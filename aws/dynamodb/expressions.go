@@ -5,8 +5,6 @@
 package dynamodb
 
 import (
-	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
@@ -128,12 +126,10 @@ func newFilterExpression(filters []Condition) (expression.ConditionBuilder, erro
 
 		// Sanity check
 		if i.Field == "" {
-			err = errors.New("Field name must be provided for a filter expression")
-			return filterExpr, err
+			return filterExpr, newErrorFilterExpressionFieldNameNotProvided()
 		}
 		if i.Operator == "" {
-			err = errors.New("Operator must be provided for a filter expression")
-			return filterExpr, err
+			return filterExpr, newErrorFilterExpressionOperatorNotProvided()
 		}
 
 		// Build the condition
@@ -158,8 +154,7 @@ func newFilterExpression(filters []Condition) (expression.ConditionBuilder, erro
 		case NotEqual:
 			tmpcond = expression.Name(i.Field).NotEqual(expression.Value(i.Value))
 		default:
-			err = fmt.Errorf("Operator type %s is not supported by filter expressions", i.Operator)
-			return filterExpr, err
+			return filterExpr, newErrorFilterExpressionOperatorNotSupported(i.Operator)
 		}
 
 		// First condition?
@@ -186,12 +181,10 @@ func newKeyExpression(conditions []Condition) (expression.KeyConditionBuilder, e
 
 		// Sanity check
 		if i.Field == "" {
-			err = errors.New("Field name must be provided for a key condition expression")
-			return keyExpr, err
+			return keyExpr, newErrorKeyExpressionFieldNameNotProvided()
 		}
 		if i.Operator == "" {
-			err = errors.New("Operator must be provided for a key condition expression")
-			return keyExpr, err
+			return keyExpr, newErrorKeyExpressionOperatorNotProvided()
 		}
 
 		// Build the condition
@@ -210,8 +203,7 @@ func newKeyExpression(conditions []Condition) (expression.KeyConditionBuilder, e
 		case LessThanOrEquals:
 			tmpcond = expression.Key(i.Field).LessThanEqual(expression.Value(i.Value))
 		default:
-			err = fmt.Errorf("Operator type %s is not supported by key condition expressions", i.Operator)
-			return keyExpr, err
+			return keyExpr, newErrorKeyExpressionOperatorNotSupported(i.Operator)
 		}
 
 		// First condition?
@@ -235,8 +227,7 @@ func newProjectionExpression(fields []Field) (expression.ProjectionBuilder, erro
 	var err error = nil
 	var projExpr expression.ProjectionBuilder
 	if len(fields) == 0 {
-		err = errors.New("Must provide at least one field for a projection expression")
-		return projExpr, err
+		return projExpr, newErrorProjExpressionFieldsNotProvided()
 	}
 
 	// Iterate records provided
@@ -244,8 +235,7 @@ func newProjectionExpression(fields []Field) (expression.ProjectionBuilder, erro
 
 		// Sanity check
 		if i.Name == "" {
-			err = errors.New("Field name must be provided for a projection expression")
-			return projExpr, err
+			return projExpr, newErrorProjExpressionFieldNameNotProvided()
 		}
 
 		// Add the field

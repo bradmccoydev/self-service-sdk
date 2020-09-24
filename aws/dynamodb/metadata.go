@@ -4,8 +4,6 @@
 package dynamodb
 
 import (
-	"errors"
-
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
@@ -29,8 +27,7 @@ func GetTableArn(sess *session.Session, tableName string) (*string, error) {
 
 	// Check we retrieved something
 	if result.Table == nil {
-		err := errors.New("Table details were not returned")
-		return nil, err
+		return nil, newErrorTableDetailsNotProvided()
 	}
 
 	// Extract the ARN
@@ -58,8 +55,7 @@ func GetTableItemCount(sess *session.Session, tableName string) (*int64, error) 
 
 	// Check we retrieved something
 	if result.Table == nil {
-		err := errors.New("Table details were not returned")
-		return nil, err
+		return nil, newErrorTableDetailsNotProvided()
 	}
 
 	// Extract the item count
@@ -81,8 +77,7 @@ func GetTableDetails(sess *session.Session, tableName string) (*dynamodb.Describ
 
 	// Sanity check
 	if tableName == "" {
-		err := errors.New("Table name must be provided")
-		return nil, err
+		return nil, newErrorTableNameNotProvided()
 	}
 
 	// Create a basic input structure for the request
