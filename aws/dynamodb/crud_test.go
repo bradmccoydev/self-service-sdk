@@ -262,51 +262,61 @@ func TestScanItems(t *testing.T) {
 	}
 }
 
-// // Test UpdateItem
-// func TestUpdateItem(t *testing.T) {
+// Test UpdateItem
+func TestUpdateItem(t *testing.T) {
 
-// 	// Setup input test data
-// 	timeStamp := time.Now().Format(time.RFC3339)
-// 	emptyInput := TestTableItem{}
-// 	noKey := TestTableItem{Title: "Fred"}
-// 	emptyKey := TestTableItem{Service: "", Title: "Fred"}
-// 	validInput := TestTableItem{Service: "Fred", Version: timeStamp, Title: "Fred"}
+	// Setup backend
+	itemKey, createerr := CreateTestTableItem()
+	if createerr != nil {
+		log.Fatal(createerr)
+	}
 
-// 	// Setup test data
-// 	tests := []struct {
-// 		desc      string
-// 		validSess bool
-// 		tableName string
-// 		input     TestTableItem
-// 		expectErr bool
-// 	}{
-// 		{"No inputs", false, "", emptyInput, true},
-// 		{"Just session", true, "", emptyInput, true},
-// 		{"Session & invalid table name", true, "fred", emptyInput, true},
-// 		{"Session & valid table name", true, "service", emptyInput, true},
-// 		{"Session, valid table name & no key", true, "service", noKey, true},
-// 		{"Session, valid table name & empty key", true, "service", emptyKey, true},
-// 		{"Valid input", true, "service", validInput, false},
-// 	}
+	// Setup keys test data
+	noKey := TestTableKeys{}
+	emptyKey := TestTableKeys{Name: ""}
+	validKey := TestTableKeys{Name: itemKey}
 
-// 	// Iterate through the test data
-// 	for _, test := range tests {
+	// Setup input test data
+	emptyInput := TestTableUpdateItem{}
+	validInput := TestTableUpdateItem{Description: "Updated", Addtion: "Added"}
 
-// 		t.Run(test.desc, func(t *testing.T) {
+	// Setup test data
+	tests := []struct {
+		desc      string
+		validSess bool
+		tableName string
+		keys      TestTableKeys
+		input     TestTableUpdateItem
+		expectErr bool
+	}{
+		{"No inputs", false, "", noKey, emptyInput, true},
+		{"Just session", true, "", noKey, emptyInput, true},
+		{"Session & invalid table name", true, TestTableNameInvalid, noKey, emptyInput, true},
+		{"Session & valid table name", true, TestTableNameValid, noKey, emptyInput, true},
+		{"Session, valid table name & no key", true, TestTableNameValid, noKey, emptyInput, true},
+		{"Session, valid table name & empty key", true, TestTableNameValid, emptyKey, emptyInput, true},
+		{"Session, valid table name & empty input", true, TestTableNameValid, validKey, emptyInput, false},
+		{"Valid input", true, TestTableNameValid, validKey, validInput, false},
+	}
 
-// 			// Run the test
-// 			var sess *session.Session
-// 			if test.validSess {
-// 				sess = internal.CreateAwsSession(true)
-// 			} else {
-// 				sess = internal.CreateAwsSession(false)
-// 			}
-// 			err := dynamodb.UpdateItem(sess, test.tableName, test.input)
-// 			if test.expectErr {
-// 				internal.HasError(t, err)
-// 			} else {
-// 				internal.NoError(t, err)
-// 			}
-// 		})
-// 	}
-// }
+	// Iterate through the test data
+	for _, test := range tests {
+
+		t.Run(test.desc, func(t *testing.T) {
+
+			// Run the test
+			var sess *session.Session
+			if test.validSess {
+				sess = internal.CreateAwsSession(true)
+			} else {
+				sess = internal.CreateAwsSession(false)
+			}
+			err := dynamodb.UpdateItem(sess, test.tableName, test.keys, test.input)
+			if test.expectErr {
+				internal.HasError(t, err)
+			} else {
+				internal.NoError(t, err)
+			}
+		})
+	}
+}

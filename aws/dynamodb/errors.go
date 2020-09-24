@@ -83,3 +83,7 @@ func newErrorTableDetailsNotProvided() error {
 func newErrorTableNameNotProvided() error {
 	return errors.New("Table name must be provided")
 }
+
+func newErrorTableUnexpectedDataTypeProvided() error {
+	return errors.New("Expected a structure to be provided for parameter input")
+}

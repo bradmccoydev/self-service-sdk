@@ -6,7 +6,6 @@ package dynamodb
 
 import (
 	"reflect"
-	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -202,39 +201,46 @@ func UpdateItem(sess *session.Session, tableName string, keys interface{}, input
 
 	// Marshall the keys
 	itemKeys, err := dynamodbattribute.MarshalMap(&keys)
-
-	// If not ok then bail
 	if err != nil {
 		return err
 	}
 
-	// We need to iterate through the input interface fields
+	// Process the input interface
 	var update expression.UpdateBuilder
-	u := reflect.ValueOf(&input).Elem()
-	t := u.Type()
-	for i := 0; i < u.NumField(); i++ {
+	val := reflect.ValueOf(input)
 
-		// Check if it is empty
-		f := u.Field(i)
-		if !reflect.DeepEqual(f.Interface(), reflect.Zero(f.Type()).Interface()) {
+	// If we were given a pointer, resolve it's value
+	if val.Kind() == reflect.Ptr {
+		val = reflect.Indirect(val)
+	}
 
-			// Get json field name
-			jsonFieldName := t.Field(i).Name
-			if jsonTag := t.Field(i).Tag.Get("json"); jsonTag != "" && jsonTag != "-" {
-				if commaIdx := strings.Index(jsonTag, ","); commaIdx > 0 {
-					jsonFieldName = jsonTag[:commaIdx]
-				}
-			}
-			// Build the update definition
-			update = update.Set(expression.Name(jsonFieldName), expression.Value(f.Interface()))
+	// Double check to make sure we have a struct
+	if val.Kind() != reflect.Struct {
+		return newErrorTableUnexpectedDataTypeProvided()
+	}
+
+	// Iterate the structure
+	typeDef := val.Type()
+	for i := 0; i < typeDef.NumField(); i++ {
+
+		// Grab the attribute name
+		attrib := typeDef.Field(i)
+		attribName := attrib.Tag.Get("json")
+		if attribName == "" {
+			attribName = attrib.Name
 		}
+
+		// Grab the attribute value
+		valueField := val.Field(i)
+		attribValue := valueField.Interface()
+
+		// Build the update definition
+		update = update.Set(expression.Name(attribName), expression.Value(attribValue))
 	}
 
 	// Create an update expression
 	builder := expression.NewBuilder().WithUpdate(update)
 	expression, err := builder.Build()
-
-	// If not ok then bail
 	if err != nil {
 		return err
 	}

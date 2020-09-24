@@ -29,6 +29,12 @@ type TestTableFullItem struct {
 	Description string `json:"description"`
 }
 
+// TestTableUpdateItem represents the bits of an item to be updated
+type TestTableUpdateItem struct {
+	Description string `json:"description"`
+	Addtion     string `json:"addition"`
+}
+
 // TestTableKeys represents the keys for the test table
 type TestTableKeys struct {
 	Name string `json:"name"`
