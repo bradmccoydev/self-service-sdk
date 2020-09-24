@@ -1,6 +1,7 @@
 package dynamodb_test
 
 import (
+	"log"
 	"testing"
 	"time"
 
@@ -10,22 +11,48 @@ import (
 	"github.com/bradmccoydev/self-service-sdk/internal"
 )
 
+// CreateTestTableItem
+func CreateTestTableItem() (string, error) {
+
+	// Ensure the test table exists
+	err := CreateTableIfNotExists(TestTableConf)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Create an item
+	sess := internal.CreateAwsSession(true)
+	key := "test-" + time.Now().Format(time.RFC3339)
+	item := TestTableFullItem{Name: key, Description: "Blah blah blah"}
+	err = dynamodb.CreateItem(sess, TestTableConf.TableName, item)
+	if err != nil {
+		return "", err
+	}
+	return key, nil
+}
+
 // Test CreateItem
 func TestCreateItem(t *testing.T) {
 
+	// Setup backend
+	createerr := CreateTableIfNotExists(TestTableConf)
+	if createerr != nil {
+		log.Fatal(createerr)
+	}
+
 	// Setup input test data
-	timeStamp := time.Now().Format(time.RFC3339)
-	emptyInput := TestTableItem{}
-	noKey := TestTableItem{Description: "Fred"}
-	emptyKey := TestTableItem{Name: "", Description: "Fred"}
-	validInput := TestTableItem{Name: "Fred", Description: timeStamp}
+	itemKey := "test-" + time.Now().Format(time.RFC3339)
+	emptyInput := TestTableFullItem{}
+	noKey := TestTableFullItem{Description: "Fred"}
+	emptyKey := TestTableFullItem{Name: "", Description: "Fred"}
+	validInput := TestTableFullItem{Name: itemKey, Description: "Something"}
 
 	// Setup test data
 	tests := []struct {
 		desc      string
 		validSess bool
 		tableName string
-		input     TestTableItem
+		input     TestTableFullItem
 		expectErr bool
 	}{
 		{"No inputs", false, "", emptyInput, true},
@@ -62,26 +89,29 @@ func TestCreateItem(t *testing.T) {
 // Test DeleteItem
 func TestDeleteItem(t *testing.T) {
 
+	// Setup backend
+	itemKey, createerr := CreateTestTableItem()
+	if createerr != nil {
+		log.Fatal(createerr)
+	}
+
 	// Setup input test data
-	timeStamp := time.Now().Format(time.RFC3339)
-	emptyInput := TestTableItem{}
-	noKey := TestTableItem{Description: "Fred"}
-	emptyKey := TestTableItem{Name: "", Description: "Fred"}
-	validInput := TestTableItem{Name: "Fred", Description: timeStamp}
+	emptyInput := TestTableKeys{}
+	emptyKey := TestTableKeys{Name: ""}
+	validInput := TestTableKeys{Name: itemKey}
 
 	// Setup test data
 	tests := []struct {
 		desc      string
 		validSess bool
 		tableName string
-		input     TestTableItem
+		input     TestTableKeys
 		expectErr bool
 	}{
 		{"No inputs", false, "", emptyInput, true},
 		{"Just session", true, "", emptyInput, true},
 		{"Session & invalid table name", true, TestTableNameInvalid, emptyInput, true},
 		{"Session & valid table name", true, TestTableNameValid, emptyInput, true},
-		{"Session, valid table name & no key", true, TestTableNameValid, noKey, true},
 		{"Session, valid table name & empty key", true, TestTableNameValid, emptyKey, true},
 		{"Valid input", true, TestTableNameValid, validInput, false},
 	}
@@ -111,14 +141,20 @@ func TestDeleteItem(t *testing.T) {
 // Test QueryItems
 func TestQueryItems(t *testing.T) {
 
+	// Setup backend
+	itemKey, createerr := CreateTestTableItem()
+	if createerr != nil {
+		log.Fatal(createerr)
+	}
+
 	// Setup response array
-	var response *[]TestTableItem
+	var response *[]TestTableFullItem
 
 	// Setup key condition test data
 	var emptyKey []dynamodb.Condition
 	invalidKeyField := []dynamodb.Condition{{Field: TestTableKeyFieldInvalid, Operator: "EQ", Value: "123"}}
 	invalidKeyVal := []dynamodb.Condition{{Field: TestTableKeyFieldValid, Operator: "EQ", Value: "123"}}
-	validKey := []dynamodb.Condition{{Field: TestTableKeyFieldValid, Operator: "EQ", Value: "123"}}
+	validKey := []dynamodb.Condition{{Field: TestTableKeyFieldValid, Operator: "EQ", Value: itemKey}}
 
 	// Setup expression test data
 	var emptyExpression expression.Expression
@@ -170,12 +206,18 @@ func TestQueryItems(t *testing.T) {
 // Test ScanItems
 func TestScanItems(t *testing.T) {
 
+	// Setup backend
+	itemKey, createerr := CreateTestTableItem()
+	if createerr != nil {
+		log.Fatal(createerr)
+	}
+
 	// Setup response array
-	var response *[]TestTableItem
+	var response *[]TestTableFullItem
 
 	// Setup filter test data
 	invalidFilter := []dynamodb.Condition{{Field: TestTableKeyFieldInvalid, Operator: "EQ", Value: "123"}}
-	validFilter := []dynamodb.Condition{{Field: TestTableKeyFieldValid, Operator: "EQ", Value: "123"}}
+	validFilter := []dynamodb.Condition{{Field: TestTableKeyFieldValid, Operator: "EQ", Value: itemKey}}
 
 	// Setup expression test data
 	var emptyExpression expression.Expression

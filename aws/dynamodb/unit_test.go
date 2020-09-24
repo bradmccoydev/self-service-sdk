@@ -23,10 +23,15 @@ const (
 	TestTableKeyFieldInvalid string = "garbage"
 )
 
-// TestTableItem represents an item from the service table
-type TestTableItem struct {
+// TestTableFullItem represents an item from the test table
+type TestTableFullItem struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
+}
+
+// TestTableKeys represents the keys for the test table
+type TestTableKeys struct {
+	Name string `json:"name"`
 }
 
 // TestTableAttribs represents the test table attributes

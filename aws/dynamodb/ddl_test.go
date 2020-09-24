@@ -12,6 +12,12 @@ import (
 // Test CreateTable
 func TestCreateTable(t *testing.T) {
 
+	// Setup backend
+	delerr := DeleteTableIfExists(TestTableNameValid)
+	if delerr != nil {
+		log.Fatal(delerr)
+	}
+
 	// Setup conf test data
 	var emptyConf dynamodb.TableConf
 	confNoMode := dynamodb.TableConf{TableName: TestTableNameValid, BillingMode: "", ReadCapacityUnits: 0, WriteCapacityUnits: 0}
@@ -40,12 +46,6 @@ func TestCreateTable(t *testing.T) {
 		{"Session, table name & attribute without a type", true, validConf, attribNoType, true},
 		{"Session, table name & key attribute without a type", true, validConf, attribKeyNoType, true},
 		{"Session, table name & full key attribute", true, validConf, attribWithKey, false},
-	}
-
-	// Ensure table doesn't exist
-	delerr := DeleteTableIfExists(TestTableNameValid)
-	if delerr != nil {
-		log.Fatal(delerr)
 	}
 
 	// Iterate through the test data
