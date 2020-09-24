@@ -4,20 +4,32 @@
 package dynamodb
 
 import (
-	"errors"
-	"fmt"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 )
 
+const (
+	// BillingModePayPerRequest - Pay per request billing mode
+	BillingModePayPerRequest string = "PAY_PER_REQUEST"
+
+	// BillingModeProvisioned - Provisioned billing mode
+	BillingModeProvisioned string = "PROVISIONED"
+
+	// KeyTypePartition - "partition" key
+	KeyTypePartition string = "HASH"
+
+	// KeyTypeSort - "sort" key
+	KeyTypeSort string = "RANGE"
+)
+
 // TableAttributes - structure used to represent table attributes
 type TableAttributes struct {
 	Name    string
 	Type    string
-	IsKey   bool
 	KeyType string
 }
 
@@ -42,16 +54,13 @@ func CreateTable(sess *session.Session, conf TableConf, attribs []TableAttribute
 
 	// Sanity check
 	if conf.TableName == "" {
-		err := errors.New("Table name must be provided")
-		return err
+		return newErrorTableNameNotProvided()
 	}
 	if conf.BillingMode == "" {
-		err := errors.New("Billing mode must be provided")
-		return err
+		return newErrorBillingModeNotProvided()
 	}
 	if len(attribs) == 0 {
-		err := errors.New("Table attributes must be provided")
-		return err
+		return newErrorTableAttributesNotProvided()
 	}
 
 	// Setup Dyanmo objects that we need
@@ -59,17 +68,17 @@ func CreateTable(sess *session.Session, conf TableConf, attribs []TableAttribute
 	var attribdefs []*dynamodb.AttributeDefinition
 
 	// Process the provided attributes
-	var havekey = false
 	for _, a := range attribs {
 
 		// Sanity checks
 		if a.Name == "" {
-			err := errors.New("Table attribute must have a name")
-			return err
+			return newErrorTableAttributeNameNotProvided()
 		}
 		if a.Type == "" {
-			err := errors.New("Table attribute must have a type")
-			return err
+			return newErrorTableAttributeTypeNotProvided()
+		}
+		if a.KeyType == "" {
+			return newErrorTableKeyFieldKeyTypeNotProvided(a.Name)
 		}
 
 		// Add the attribute definition
@@ -79,29 +88,12 @@ func CreateTable(sess *session.Session, conf TableConf, attribs []TableAttribute
 		}
 		attribdefs = append(attribdefs, &adef)
 
-		// Handle if a key field
-		if a.IsKey {
-
-			// Make sure we have a key type
-			if a.KeyType == "" {
-				err := fmt.Errorf("The key field %s did not include a key type", a.Name)
-				return err
-			}
-
-			// Add the key element
-			kdef := dynamodb.KeySchemaElement{
-				AttributeName: aws.String(a.Name),
-				KeyType:       aws.String(a.KeyType),
-			}
-			keys = append(keys, &kdef)
-			havekey = true
+		// Add the key element
+		kdef := dynamodb.KeySchemaElement{
+			AttributeName: aws.String(a.Name),
+			KeyType:       aws.String(a.KeyType),
 		}
-	}
-
-	// Check we have at least one key
-	if havekey == false {
-		err := errors.New("No key attributes were provided")
-		return err
+		keys = append(keys, &kdef)
 	}
 
 	// Create a basic input structure for the request
@@ -120,7 +112,7 @@ func CreateTable(sess *session.Session, conf TableConf, attribs []TableAttribute
 	params = params.SetBillingMode(conf.BillingMode)
 
 	// Add the capacity units if billing mode is provisioned
-	if strings.ToUpper(conf.BillingMode) == "PROVISIONED" {
+	if strings.ToUpper(conf.BillingMode) == BillingModeProvisioned {
 		thruput := dynamodb.ProvisionedThroughput{
 			ReadCapacityUnits:  &conf.ReadCapacityUnits,
 			WriteCapacityUnits: &conf.WriteCapacityUnits,
@@ -133,6 +125,11 @@ func CreateTable(sess *session.Session, conf TableConf, attribs []TableAttribute
 
 	// Make the call to DynamoDB
 	_, err := svc.CreateTable(params)
+
+	// If ok, sleep for 5 seconds to allow time for processing
+	if err == nil {
+		time.Sleep(5 * time.Second)
+	}
 
 	// Return
 	return err
@@ -150,8 +147,7 @@ func DeleteTable(sess *session.Session, tableName string) error {
 
 	// Sanity check
 	if tableName == "" {
-		err := errors.New("Table name must be provided")
-		return err
+		return newErrorTableNameNotProvided()
 	}
 
 	// Build the delete table params
@@ -164,6 +160,11 @@ func DeleteTable(sess *session.Session, tableName string) error {
 
 	// Make the call to DynamoDB
 	_, err := svc.DeleteTable(params)
+
+	// If ok, sleep for 5 seconds to allow time for processing
+	if err == nil {
+		time.Sleep(5 * time.Second)
+	}
 
 	// Return
 	return err

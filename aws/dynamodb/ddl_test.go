@@ -12,6 +12,12 @@ import (
 // Test CreateTable
 func TestCreateTable(t *testing.T) {
 
+	// Setup backend
+	delerr := DeleteTableIfExists(TestTableNameValid)
+	if delerr != nil {
+		log.Fatal(delerr)
+	}
+
 	// Setup conf test data
 	var emptyConf dynamodb.TableConf
 	confNoMode := dynamodb.TableConf{TableName: TestTableNameValid, BillingMode: "", ReadCapacityUnits: 0, WriteCapacityUnits: 0}
@@ -19,11 +25,10 @@ func TestCreateTable(t *testing.T) {
 
 	// Setup attribute test data
 	var emptyInput []dynamodb.TableAttributes
-	attribNoName := []dynamodb.TableAttributes{{Name: "", Type: "", IsKey: false, KeyType: ""}}
-	attribNoType := []dynamodb.TableAttributes{{Name: TestTableKeyFieldValid, Type: "", IsKey: false, KeyType: ""}}
-	attribNoKey := []dynamodb.TableAttributes{{Name: TestTableKeyFieldValid, Type: "S", IsKey: false, KeyType: ""}}
-	attribKeyNoType := []dynamodb.TableAttributes{{Name: TestTableKeyFieldValid, Type: "S", IsKey: true, KeyType: ""}}
-	attribWithKey := []dynamodb.TableAttributes{{Name: TestTableKeyFieldValid, Type: "S", IsKey: true, KeyType: "HASH"}}
+	attribNoName := []dynamodb.TableAttributes{{Name: "", Type: "", KeyType: ""}}
+	attribNoType := []dynamodb.TableAttributes{{Name: TestTableKeyFieldValid, Type: "", KeyType: ""}}
+	attribKeyNoType := []dynamodb.TableAttributes{{Name: TestTableKeyFieldValid, Type: "S", KeyType: ""}}
+	attribWithKey := []dynamodb.TableAttributes{{Name: TestTableKeyFieldValid, Type: "S", KeyType: "HASH"}}
 
 	// Setup test data
 	tests := []struct {
@@ -39,15 +44,8 @@ func TestCreateTable(t *testing.T) {
 		{"Session, table name & billing mode", true, validConf, emptyInput, true},
 		{"Session, table name & attribute without a name", true, validConf, attribNoName, true},
 		{"Session, table name & attribute without a type", true, validConf, attribNoType, true},
-		{"Session, table name & attribute without a key", true, validConf, attribNoKey, true},
 		{"Session, table name & key attribute without a type", true, validConf, attribKeyNoType, true},
 		{"Session, table name & full key attribute", true, validConf, attribWithKey, false},
-	}
-
-	// Ensure table doesn't exist
-	delerr := DeleteTableIfExists(TestTableNameValid)
-	if delerr != nil {
-		log.Fatal(delerr)
 	}
 
 	// Iterate through the test data
@@ -86,6 +84,12 @@ func TestDeleteTable(t *testing.T) {
 		{"Just session", true, "", true},
 		{"Session & invalid table name", true, TestTableNameInvalid, true},
 		{"Session & valid table name", true, TestTableNameValid, false},
+	}
+
+	// Ensure table exists
+	createerr := CreateTableIfNotExists(TestTableConf)
+	if createerr != nil {
+		log.Fatal(createerr)
 	}
 
 	// Iterate through the test data
