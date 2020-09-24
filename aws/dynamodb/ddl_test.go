@@ -19,11 +19,10 @@ func TestCreateTable(t *testing.T) {
 
 	// Setup attribute test data
 	var emptyInput []dynamodb.TableAttributes
-	attribNoName := []dynamodb.TableAttributes{{Name: "", Type: "", IsKey: false, KeyType: ""}}
-	attribNoType := []dynamodb.TableAttributes{{Name: TestTableKeyFieldValid, Type: "", IsKey: false, KeyType: ""}}
-	attribNoKey := []dynamodb.TableAttributes{{Name: TestTableKeyFieldValid, Type: "S", IsKey: false, KeyType: ""}}
-	attribKeyNoType := []dynamodb.TableAttributes{{Name: TestTableKeyFieldValid, Type: "S", IsKey: true, KeyType: ""}}
-	attribWithKey := []dynamodb.TableAttributes{{Name: TestTableKeyFieldValid, Type: "S", IsKey: true, KeyType: "HASH"}}
+	attribNoName := []dynamodb.TableAttributes{{Name: "", Type: "", KeyType: ""}}
+	attribNoType := []dynamodb.TableAttributes{{Name: TestTableKeyFieldValid, Type: "", KeyType: ""}}
+	attribKeyNoType := []dynamodb.TableAttributes{{Name: TestTableKeyFieldValid, Type: "S", KeyType: ""}}
+	attribWithKey := []dynamodb.TableAttributes{{Name: TestTableKeyFieldValid, Type: "S", KeyType: "HASH"}}
 
 	// Setup test data
 	tests := []struct {
@@ -39,7 +38,6 @@ func TestCreateTable(t *testing.T) {
 		{"Session, table name & billing mode", true, validConf, emptyInput, true},
 		{"Session, table name & attribute without a name", true, validConf, attribNoName, true},
 		{"Session, table name & attribute without a type", true, validConf, attribNoType, true},
-		{"Session, table name & attribute without a key", true, validConf, attribNoKey, true},
 		{"Session, table name & key attribute without a type", true, validConf, attribKeyNoType, true},
 		{"Session, table name & full key attribute", true, validConf, attribWithKey, false},
 	}

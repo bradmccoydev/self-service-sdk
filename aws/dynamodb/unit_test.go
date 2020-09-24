@@ -30,11 +30,10 @@ type TestTableItem struct {
 }
 
 // TestTableAttribs represents the test table attributes
-var TestTableKeys = []dynamodb.TableAttributes{
+var TestTableAttribs = []dynamodb.TableAttributes{
 	{
 		Name:    "name",
 		Type:    "S",
-		IsKey:   true,
 		KeyType: dynamodb.KeyTypePartition,
 	},
 }
@@ -55,7 +54,7 @@ func CreateTableIfNotExists(tableConf dynamodb.TableConf) error {
 	exists, _ := dynamodb.TableExists(sess, tableConf.TableName)
 	var err error
 	if exists == false {
-		err = dynamodb.CreateTable(sess, tableConf, TestTableKeys)
+		err = dynamodb.CreateTable(sess, tableConf, TestTableAttribs)
 	}
 	return err
 }

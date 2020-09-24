@@ -112,7 +112,7 @@ func QueryItems(sess *session.Session, tableName string, expr expression.Express
 		return newErrorTableNameNotProvided()
 	}
 	if expr.KeyCondition() == nil {
-		return newErrorExpressionKeyNotProvided()
+		return newErrorKeyExpressionKeyNotProvided()
 	}
 
 	// Build the query params

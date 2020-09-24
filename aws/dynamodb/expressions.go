@@ -126,10 +126,10 @@ func newFilterExpression(filters []Condition) (expression.ConditionBuilder, erro
 
 		// Sanity check
 		if i.Field == "" {
-			return filterExpr, newErrorExpressionFieldNameNotProvided()
+			return filterExpr, newErrorFilterExpressionFieldNameNotProvided()
 		}
 		if i.Operator == "" {
-			return filterExpr, newErrorExpressionOperatorNotProvided()
+			return filterExpr, newErrorFilterExpressionOperatorNotProvided()
 		}
 
 		// Build the condition
@@ -154,7 +154,7 @@ func newFilterExpression(filters []Condition) (expression.ConditionBuilder, erro
 		case NotEqual:
 			tmpcond = expression.Name(i.Field).NotEqual(expression.Value(i.Value))
 		default:
-			return filterExpr, newErrorExpressionFilterOperatorNotSupported(i.Operator)
+			return filterExpr, newErrorFilterExpressionOperatorNotSupported(i.Operator)
 		}
 
 		// First condition?
@@ -181,10 +181,10 @@ func newKeyExpression(conditions []Condition) (expression.KeyConditionBuilder, e
 
 		// Sanity check
 		if i.Field == "" {
-			return keyExpr, newErrorExpressionFieldNameNotProvided()
+			return keyExpr, newErrorKeyExpressionFieldNameNotProvided()
 		}
 		if i.Operator == "" {
-			return keyExpr, newErrorExpressionOperatorNotProvided()
+			return keyExpr, newErrorKeyExpressionOperatorNotProvided()
 		}
 
 		// Build the condition
@@ -203,7 +203,7 @@ func newKeyExpression(conditions []Condition) (expression.KeyConditionBuilder, e
 		case LessThanOrEquals:
 			tmpcond = expression.Key(i.Field).LessThanEqual(expression.Value(i.Value))
 		default:
-			return keyExpr, newErrorExpressionKeyCondOperatorNotSupported(i.Operator)
+			return keyExpr, newErrorKeyExpressionOperatorNotSupported(i.Operator)
 		}
 
 		// First condition?
@@ -227,7 +227,7 @@ func newProjectionExpression(fields []Field) (expression.ProjectionBuilder, erro
 	var err error = nil
 	var projExpr expression.ProjectionBuilder
 	if len(fields) == 0 {
-		return projExpr, newErrorExpressionProjFieldsNotProvided()
+		return projExpr, newErrorProjExpressionFieldsNotProvided()
 	}
 
 	// Iterate records provided
@@ -235,7 +235,7 @@ func newProjectionExpression(fields []Field) (expression.ProjectionBuilder, erro
 
 		// Sanity check
 		if i.Name == "" {
-			return projExpr, newErrorExpressionFieldNameNotProvided()
+			return projExpr, newErrorProjExpressionFieldNameNotProvided()
 		}
 
 		// Add the field

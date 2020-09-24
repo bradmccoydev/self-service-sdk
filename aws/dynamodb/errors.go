@@ -12,27 +12,39 @@ import (
 Expression errors
 ***/
 
-func newErrorExpressionFieldNameNotProvided() error {
-	return errors.New("A field name must be provided for the expression")
+func newErrorFilterExpressionFieldNameNotProvided() error {
+	return errors.New("A field name must be provided for the filter expression")
 }
 
-func newErrorExpressionKeyNotProvided() error {
-	return errors.New("A key condition must be provided in the expression")
+func newErrorFilterExpressionOperatorNotProvided() error {
+	return errors.New("An operator must be provided for the filter expression")
 }
 
-func newErrorExpressionOperatorNotProvided() error {
-	return errors.New("An operator must be provided for the expression")
-}
-
-func newErrorExpressionFilterOperatorNotSupported(op string) error {
+func newErrorFilterExpressionOperatorNotSupported(op string) error {
 	return fmt.Errorf("The operator type %s is not supported by filter expressions", op)
 }
 
-func newErrorExpressionKeyCondOperatorNotSupported(op string) error {
+func newErrorKeyExpressionFieldNameNotProvided() error {
+	return errors.New("A field name must be provided for the key condition expression")
+}
+
+func newErrorKeyExpressionOperatorNotProvided() error {
+	return errors.New("An operator must be provided for the key condition expression")
+}
+
+func newErrorKeyExpressionOperatorNotSupported(op string) error {
 	return fmt.Errorf("The operator type %s is not supported by key condition expressions", op)
 }
 
-func newErrorExpressionProjFieldsNotProvided() error {
+func newErrorKeyExpressionKeyNotProvided() error {
+	return errors.New("A key condition must be provided in the expression")
+}
+
+func newErrorProjExpressionFieldNameNotProvided() error {
+	return errors.New("A field name must be provided for the projection expression")
+}
+
+func newErrorProjExpressionFieldsNotProvided() error {
 	return fmt.Errorf("At least one field must be provided for a projection expression")
 }
 

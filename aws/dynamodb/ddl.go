@@ -5,6 +5,7 @@ package dynamodb
 
 import (
 	"strings"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -29,7 +30,6 @@ const (
 type TableAttributes struct {
 	Name    string
 	Type    string
-	IsKey   bool
 	KeyType string
 }
 
@@ -68,7 +68,6 @@ func CreateTable(sess *session.Session, conf TableConf, attribs []TableAttribute
 	var attribdefs []*dynamodb.AttributeDefinition
 
 	// Process the provided attributes
-	var havekey = false
 	for _, a := range attribs {
 
 		// Sanity checks
@@ -78,6 +77,9 @@ func CreateTable(sess *session.Session, conf TableConf, attribs []TableAttribute
 		if a.Type == "" {
 			return newErrorTableAttributeTypeNotProvided()
 		}
+		if a.KeyType == "" {
+			return newErrorTableKeyFieldKeyTypeNotProvided(a.Name)
+		}
 
 		// Add the attribute definition
 		adef := dynamodb.AttributeDefinition{
@@ -86,27 +88,12 @@ func CreateTable(sess *session.Session, conf TableConf, attribs []TableAttribute
 		}
 		attribdefs = append(attribdefs, &adef)
 
-		// Handle if a key field
-		if a.IsKey {
-
-			// Make sure we have a key type
-			if a.KeyType == "" {
-				return newErrorTableKeyFieldKeyTypeNotProvided(a.Name)
-			}
-
-			// Add the key element
-			kdef := dynamodb.KeySchemaElement{
-				AttributeName: aws.String(a.Name),
-				KeyType:       aws.String(a.KeyType),
-			}
-			keys = append(keys, &kdef)
-			havekey = true
+		// Add the key element
+		kdef := dynamodb.KeySchemaElement{
+			AttributeName: aws.String(a.Name),
+			KeyType:       aws.String(a.KeyType),
 		}
-	}
-
-	// Check we have at least one key
-	if havekey == false {
-		return newErrorTableKeyAttributesNotProvided()
+		keys = append(keys, &kdef)
 	}
 
 	// Create a basic input structure for the request
@@ -139,6 +126,11 @@ func CreateTable(sess *session.Session, conf TableConf, attribs []TableAttribute
 	// Make the call to DynamoDB
 	_, err := svc.CreateTable(params)
 
+	// If ok, sleep for 5 seconds to allow time for processing
+	if err == nil {
+		time.Sleep(5 * time.Second)
+	}
+
 	// Return
 	return err
 }
@@ -168,6 +160,11 @@ func DeleteTable(sess *session.Session, tableName string) error {
 
 	// Make the call to DynamoDB
 	_, err := svc.DeleteTable(params)
+
+	// If ok, sleep for 5 seconds to allow time for processing
+	if err == nil {
+		time.Sleep(5 * time.Second)
+	}
 
 	// Return
 	return err
