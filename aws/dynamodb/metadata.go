@@ -9,18 +9,52 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 )
 
-// GetTableArn - This function retrieves the Amazon Resource Name (ARN) for the table
+// DescribeTable - This function retrieves all the metadata (ARN, item count, keys etc.) about a table
 //
 //   Parameters:
 //     sess: a valid AWS session
 //     tableName: the name of the table to
 //
 //   Example:
+//     info, err := DescribeTable(mySession, "fred")
+func DescribeTable(sess *session.Session, tableName string) (*dynamodb.DescribeTableOutput, error) {
+
+	// Sanity check
+	if tableName == "" {
+		return nil, newErrorTableNameNotProvided()
+	}
+
+	// Create a basic input structure for the request
+	params := &dynamodb.DescribeTableInput{}
+	params = params.SetTableName(tableName)
+
+	// Create the DynamoDB client
+	svc := dynamodb.New(sess)
+
+	// Make the call to DynamoDB
+	result, err := svc.DescribeTable(params)
+
+	// If not ok then bail
+	if err != nil {
+		return nil, err
+	}
+
+	// Return it
+	return result, nil
+}
+
+// GetTableArn - This function retrieves the Amazon Resource Name (ARN) for the table
+//
+//   Parameters:
+//     sess: a valid AWS session
+//     tableName: the name of the table to get the ARN for
+//
+//   Example:
 //     val, err := GetTableArn(mySession, "fred")
 func GetTableArn(sess *session.Session, tableName string) (*string, error) {
 
 	// Get the table details
-	result, err := GetTableDetails(sess, tableName)
+	result, err := DescribeTable(sess, tableName)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +82,7 @@ func GetTableArn(sess *session.Session, tableName string) (*string, error) {
 func GetTableItemCount(sess *session.Session, tableName string) (*int64, error) {
 
 	// Get the table details
-	result, err := GetTableDetails(sess, tableName)
+	result, err := DescribeTable(sess, tableName)
 	if err != nil {
 		return nil, err
 	}
@@ -63,40 +97,6 @@ func GetTableItemCount(sess *session.Session, tableName string) (*int64, error) 
 
 	// Return it
 	return count, nil
-}
-
-// GetTableDetails - This function retrieves all the metadata (ARN, item count, keys etc.) about a table
-//
-//   Parameters:
-//     sess: a valid AWS session
-//     tableName: the name of the table to
-//
-//   Example:
-//     info, err := GetTableDetails(mySession, "fred")
-func GetTableDetails(sess *session.Session, tableName string) (*dynamodb.DescribeTableOutput, error) {
-
-	// Sanity check
-	if tableName == "" {
-		return nil, newErrorTableNameNotProvided()
-	}
-
-	// Create a basic input structure for the request
-	params := &dynamodb.DescribeTableInput{}
-	params = params.SetTableName(tableName)
-
-	// Create the DynamoDB client
-	svc := dynamodb.New(sess)
-
-	// Make the call to DynamoDB
-	result, err := svc.DescribeTable(params)
-
-	// If not ok then bail
-	if err != nil {
-		return nil, err
-	}
-
-	// Return it
-	return result, nil
 }
 
 // GetTableList - This function retrieves a list of available tables
@@ -141,7 +141,7 @@ func GetTableList(sess *session.Session) ([]string, error) {
 func TableExists(sess *session.Session, tableName string) (bool, error) {
 
 	// Get the table details
-	_, err := GetTableDetails(sess, tableName)
+	_, err := DescribeTable(sess, tableName)
 	if err != nil {
 
 		// Check error details to check if "real" error
