@@ -9,11 +9,12 @@ The table below explains the layout of this repository.
 
 | Directory | Purpose |
 | :---: | :--- |
-| /aws | This directory contains AWS related SDK packages |
-| /azure | This directory contains Azure related SDK packages |
-| /configutil | This directory contains the configuration utility package |
 | /internal | This directory contains utility functions for internal testing etc |
-| /logutil | This directory contains the logging utility package |
+| /sdk | This directory contains the SDK packages |
+| /sdk/aws | This directory contains AWS related SDK packages |
+| /sdk/azure | This directory contains Azure related SDK packages |
+| /sdk/configutil | This directory contains the configuration utility package |
+| /sdk/logutil | This directory contains the logging utility package |
 | /templates | This directory contains templates for using the SDK |
 
 
@@ -23,7 +24,7 @@ The table below lists the requirements to use the SDK.
 
 | Item | Requirement |
 | :---: | :--- |
-| 1 | Go >= v1.14 |
+| 1 | Go >= v1.15 |
 | 2 | An AWS account with appropriate permissions. See [below](#aws). |
 | 3 | Certain environment variables to drive the testing framework. See [below](#testing). |
 
@@ -35,6 +36,7 @@ To enable testing of the AWS functionality an AWS account is required. The table
 | Object | Permission | Notes |
 | :--- | :--- | :--- |
 | DynamoDB | ? | |
+| Secrets Manager | ? | |
 | | | |
 
 

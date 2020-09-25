@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/aws/aws-sdk-go/service/sts"
-	"github.com/bradmccoydev/self-service-sdk/aws/auth"
 	"github.com/bradmccoydev/self-service-sdk/internal"
+	"github.com/bradmccoydev/self-service-sdk/sdk/aws/auth"
 )
 
 // Common structure for defining test data
