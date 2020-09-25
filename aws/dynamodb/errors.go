@@ -1,5 +1,5 @@
 // This file contains all the bits & pieces related to
-// error messages for this package.
+// error messages for the dynamodb package.
 
 package dynamodb
 

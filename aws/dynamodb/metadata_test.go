@@ -9,6 +9,50 @@ import (
 	"github.com/bradmccoydev/self-service-sdk/internal"
 )
 
+// Test DescribeTable
+func TestDescribeTable(t *testing.T) {
+
+	// Setup backend
+	createerr := CreateTableIfNotExists(TestTableConf)
+	if createerr != nil {
+		log.Fatal(createerr)
+	}
+
+	// Setup test data
+	tests := []struct {
+		desc      string
+		validSess bool
+		tableName string
+		expectErr bool
+	}{
+		{"No session", false, "", true},
+		{"With session but no table name", true, "", true},
+		{"With session and invalid table name", true, TestTableNameInvalid, true},
+		{"With session and valid table name", true, TestTableNameValid, false},
+	}
+
+	// Iterate through the test data
+	for _, test := range tests {
+
+		t.Run(test.desc, func(t *testing.T) {
+
+			// Run the test
+			var sess *session.Session
+			if test.validSess {
+				sess = internal.CreateAwsSession(true)
+			} else {
+				sess = internal.CreateAwsSession(false)
+			}
+			_, err := dynamodb.DescribeTable(sess, test.tableName)
+			if test.expectErr {
+				internal.HasError(t, err)
+			} else {
+				internal.NoError(t, err)
+			}
+		})
+	}
+}
+
 // Test GetTableArn
 func TestGetTableArn(t *testing.T) {
 
@@ -72,50 +116,6 @@ func TestGetTableItemCount(t *testing.T) {
 			// Run the test
 			sess := internal.CreateAwsSession(true)
 			_, err := dynamodb.GetTableItemCount(sess, test.tableName)
-			if test.expectErr {
-				internal.HasError(t, err)
-			} else {
-				internal.NoError(t, err)
-			}
-		})
-	}
-}
-
-// Test GetTableDetails
-func TestGetTableDetails(t *testing.T) {
-
-	// Setup backend
-	createerr := CreateTableIfNotExists(TestTableConf)
-	if createerr != nil {
-		log.Fatal(createerr)
-	}
-
-	// Setup test data
-	tests := []struct {
-		desc      string
-		validSess bool
-		tableName string
-		expectErr bool
-	}{
-		{"No session", false, "", true},
-		{"With session but no table name", true, "", true},
-		{"With session and invalid table name", true, TestTableNameInvalid, true},
-		{"With session and valid table name", true, TestTableNameValid, false},
-	}
-
-	// Iterate through the test data
-	for _, test := range tests {
-
-		t.Run(test.desc, func(t *testing.T) {
-
-			// Run the test
-			var sess *session.Session
-			if test.validSess {
-				sess = internal.CreateAwsSession(true)
-			} else {
-				sess = internal.CreateAwsSession(false)
-			}
-			_, err := dynamodb.GetTableDetails(sess, test.tableName)
 			if test.expectErr {
 				internal.HasError(t, err)
 			} else {
