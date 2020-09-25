@@ -6,7 +6,6 @@ package secretsmanager
 
 import (
 	"encoding/json"
-	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -20,12 +19,6 @@ type secretDetails struct {
 	desc      string
 	secBin    []byte
 	secString string
-}
-
-// SecretKeyValue - structure used to specify a secret key-value
-type SecretKeyValue struct {
-	Key   string
-	Value string
 }
 
 // createSecret - This function creates a secret
@@ -182,7 +175,7 @@ func getSecret(sess *session.Session, secretName string) (*secretsmanager.GetSec
 	return result, err
 }
 
-// GetSecretKeyValue - This function retrieves a secret key-value pair
+// GetSecretKeyValue - This function retrieves a hashmap of secret key-value pairs
 //
 //   Parameters:
 //     sess: a valid AWS session
@@ -190,25 +183,19 @@ func getSecret(sess *session.Session, secretName string) (*secretsmanager.GetSec
 //
 //   Example:
 //     secretKV, err := GetSecretKeyValue(mySession, secretName)
-func GetSecretKeyValue(sess *session.Session, secretName string) (SecretKeyValue, error) {
+func GetSecretKeyValue(sess *session.Session, secretName string) (map[string]string, error) {
 
 	result, err := getSecret(sess, secretName)
-	var keyval SecretKeyValue
-	if err == nil {
-
-		// Parse the result
-		str := strings.Trim(string(*result.SecretString), "{}")
-		arr := strings.Split(str, ":")
-
-		// Get the key
-		keyval.Key = arr[0][1 : len(arr[0])-1]
-
-		// Get the value
-		keyval.Value = arr[1][1 : len(arr[1])-1]
+	if err != nil {
+		return nil, err
 	}
 
+	// Unmarshal result to hashmap
+	kvMap := make(map[string]string)
+	err = json.Unmarshal([]byte(*result.SecretString), &kvMap)
+
 	// Return stuff
-	return keyval, err
+	return kvMap, err
 }
 
 // GetSecretString - This function retrieves a secret string

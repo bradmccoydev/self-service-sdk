@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/bradmccoydev/self-service-sdk/aws/secretsmanager"
 	"github.com/bradmccoydev/self-service-sdk/internal"
 )
 
@@ -15,6 +16,32 @@ const (
 	// An invalid testing secret name
 	TestSecretNameInvalid string = "garbage"
 )
+
+// CreateTestSecretIfNotExists
+func CreateTestSecretIfNotExists() error {
+
+	// If the secret doesn't exist then create it
+	sess := internal.CreateAwsSession(true)
+	exists, _ := secretsmanager.SecretExists(sess, TestSecretNameValid)
+	var err error
+	if exists == false {
+		err = secretsmanager.CreateSecretString(sess, TestSecretNameValid, TestSecretNameValid, "Something")
+	}
+	return err
+}
+
+// DeleteTestSecretIfExists
+func DeleteTestSecretIfExists() error {
+
+	// If the secret exists then delete it
+	sess := internal.CreateAwsSession(true)
+	exists, _ := secretsmanager.SecretExists(sess, TestSecretNameValid)
+	var err error
+	if exists {
+		err = secretsmanager.DeleteSecret(sess, TestSecretNameValid)
+	}
+	return err
+}
 
 // TestMain routine for controlling setup/destruction for all tests in this package
 func TestMain(m *testing.M) {

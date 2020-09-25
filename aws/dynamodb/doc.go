@@ -3,6 +3,7 @@
 //
 //   The following AWS GoLang SDK packages are used:
 //     * aws
+//     * aws/awserr
 //     * aws/session
 //     * service/dynamodb
 //     * service/dynamodb/dynamodbattribute

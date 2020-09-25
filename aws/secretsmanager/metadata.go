@@ -5,6 +5,7 @@ package secretsmanager
 
 import (
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/secretsmanager"
 )
@@ -60,4 +61,36 @@ func GetSecretArn(sess *session.Session, secretName string) (*string, error) {
 
 	// Return it
 	return arn, err
+}
+
+// SecretExists - This function checks if the specified secret exists
+//
+//   Parameters:
+//     sess: a valid AWS session
+//     secretName: the name of the secret to check
+//
+//   Example:
+//     val, err := SecretExists(mySession, "fred")
+func SecretExists(sess *session.Session, secretName string) (bool, error) {
+
+	// Get the table details
+	_, err := DescribeSecret(sess, secretName)
+	if err != nil {
+
+		// Check error details to check if "real" error
+		if aerr, ok := err.(awserr.Error); ok {
+			switch aerr.Code() {
+			case secretsmanager.ErrCodeResourceNotFoundException:
+				return false, nil
+			default:
+				return false, err
+			}
+		}
+
+		//if err.
+		return false, err
+	}
+
+	// Return it
+	return true, nil
 }
