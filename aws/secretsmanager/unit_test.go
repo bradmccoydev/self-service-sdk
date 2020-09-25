@@ -8,8 +8,13 @@ import (
 	"github.com/bradmccoydev/self-service-sdk/internal"
 )
 
-// Global variable for AWS credentials
-var AwsCreds internal.AwsCreds
+const (
+	// The valid testing secret name
+	TestSecretNameValid string = "testing"
+
+	// An invalid testing secret name
+	TestSecretNameInvalid string = "garbage"
+)
 
 // TestMain routine for controlling setup/destruction for all tests in this package
 func TestMain(m *testing.M) {
@@ -17,14 +22,8 @@ func TestMain(m *testing.M) {
 	// Do we need to do these tests?
 	var doTests bool = internal.PerformAwsTests()
 	if doTests == false {
+		log.Printf("AWS testing variable: %s not set or set to false", internal.TestAwsEnabled)
 		os.Exit(0)
-	}
-
-	// Set the global variable to make the values available for all tests
-	var err error = nil
-	AwsCreds, err = internal.LoadAwsCreds()
-	if err != nil {
-		log.Fatal(err)
 	}
 
 	// Run the various tests then exit

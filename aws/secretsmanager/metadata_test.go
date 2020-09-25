@@ -35,7 +35,7 @@ func TestDescribeSecret(t *testing.T) {
 			} else {
 				sess = internal.CreateAwsSession(false)
 			}
-			_, err := secretsmanager.TestDescribeSecret(sess, test.secretName)
+			_, err := secretsmanager.DescribeSecret(sess, test.secretName)
 			if test.expectErr {
 				internal.HasError(t, err)
 			} else {

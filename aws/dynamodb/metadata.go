@@ -47,7 +47,7 @@ func DescribeTable(sess *session.Session, tableName string) (*dynamodb.DescribeT
 //
 //   Parameters:
 //     sess: a valid AWS session
-//     tableName: the name of the table to
+//     tableName: the name of the table to get the ARN for
 //
 //   Example:
 //     val, err := GetTableArn(mySession, "fred")

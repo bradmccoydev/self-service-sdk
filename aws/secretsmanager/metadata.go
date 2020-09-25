@@ -38,3 +38,26 @@ func DescribeSecret(sess *session.Session, secretName string) (*secretsmanager.D
 	// Return the result
 	return result, err
 }
+
+// GetSecretArn - This function retrieves the Amazon Resource Name (ARN) for the secret
+//
+//   Parameters:
+//     sess: a valid AWS session
+//     secretName: the name of the secret to get the ARN for
+//
+//   Example:
+//     val, err := GetSecretArn(mySession, "fred")
+func GetSecretArn(sess *session.Session, secretName string) (*string, error) {
+
+	// Get the table details
+	result, err := DescribeSecret(sess, secretName)
+	if err != nil {
+		return nil, err
+	}
+
+	// Extract the ARN
+	arn := result.ARN
+
+	// Return it
+	return arn, err
+}
