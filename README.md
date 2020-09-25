@@ -8,7 +8,7 @@ This repository contains the SDK for Self Service. It is provided as a GoLang mo
 The table below explains the layout of this repository.
 
 | Directory | Purpose |
-| :---: | :--- |
+| :--- | :--- |
 | /internal | This directory contains utility functions for internal testing etc |
 | /sdk | This directory contains the SDK packages |
 | /sdk/aws | This directory contains AWS related SDK packages |
