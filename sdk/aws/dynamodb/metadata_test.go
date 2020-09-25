@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/bradmccoydev/self-service-sdk/aws/dynamodb"
 	"github.com/bradmccoydev/self-service-sdk/internal"
+	"github.com/bradmccoydev/self-service-sdk/sdk/aws/dynamodb"
 )
 
 // Test DescribeTable

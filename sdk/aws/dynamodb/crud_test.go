@@ -7,8 +7,8 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
-	"github.com/bradmccoydev/self-service-sdk/aws/dynamodb"
 	"github.com/bradmccoydev/self-service-sdk/internal"
+	"github.com/bradmccoydev/self-service-sdk/sdk/aws/dynamodb"
 )
 
 // CreateTestTableItem

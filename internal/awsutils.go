@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/bradmccoydev/self-service-sdk/aws/auth"
+	"github.com/bradmccoydev/self-service-sdk/sdk/aws/auth"
 )
 
 const (
