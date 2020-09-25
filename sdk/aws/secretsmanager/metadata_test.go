@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/bradmccoydev/self-service-sdk/aws/secretsmanager"
 	"github.com/bradmccoydev/self-service-sdk/internal"
+	"github.com/bradmccoydev/self-service-sdk/sdk/aws/secretsmanager"
 )
 
 // Test DescribeSecret

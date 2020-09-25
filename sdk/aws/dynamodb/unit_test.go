@@ -5,8 +5,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/bradmccoydev/self-service-sdk/aws/dynamodb"
 	"github.com/bradmccoydev/self-service-sdk/internal"
+	"github.com/bradmccoydev/self-service-sdk/sdk/aws/dynamodb"
 )
 
 const (

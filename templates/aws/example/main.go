@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/bradmccoydev/self-service-sdk/configutil"
-	"github.com/bradmccoydev/self-service-sdk/logutil"
+	"github.com/bradmccoydev/self-service-sdk/sdk/configutil"
+	"github.com/bradmccoydev/self-service-sdk/sdk/logutil"
 )
 
 // Request - defines the input we expect to receive

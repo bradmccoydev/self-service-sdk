@@ -5,8 +5,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/bradmccoydev/self-service-sdk/aws/secretsmanager"
 	"github.com/bradmccoydev/self-service-sdk/internal"
+	"github.com/bradmccoydev/self-service-sdk/sdk/aws/secretsmanager"
 )
 
 const (
