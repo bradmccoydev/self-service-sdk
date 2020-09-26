@@ -11,7 +11,7 @@ The table below explains the layout of this directory.
 | :--- | :--- |
 | /internal | This directory contains utility functions for internal testing etc |
 | /sdk | This directory contains the [SDK packages](sdk/README.md) |
-| /templates | This directory contains [templates](templates.README.md) for using the SDK |
+| /templates | This directory contains [templates](templates/README.md) for using the SDK |
 
 
 ## Requirements

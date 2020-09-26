@@ -34,7 +34,7 @@ services:
 # Change the mount point to the source folder on your pc.
 #
 #####
-      - ./example:/tmp/source
+      - ./examples/basic:/tmp/source
 
 #####
 #
