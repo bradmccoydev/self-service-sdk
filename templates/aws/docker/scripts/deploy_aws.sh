@@ -128,7 +128,7 @@ log_info() {
    esac
 
    # Do we need to write to the log also?
-   if [[ ${VERBOSE} == "TRUE" ]]; then
+   if [[ ${SCRIPT_VERBOSE,,} == "true" ]]; then
       log_debug "${2}"
    fi
 }
@@ -175,16 +175,21 @@ do_load_values() {
    . "${FILE_PATH_USER_INPUTS}"
 
    # Verbose logging
-   if [[ ${VERBOSE} == "TRUE" ]]; then
-      log_debug "The following SERVICE values were loaded:"
-      for value in `env | grep ^SERVICE_`
+   if [[ ${SCRIPT_VERBOSE,,} == "true" ]]; then
+      log_debug "The following SCRIPT values were loaded:"
+      env | grep ^SCRIPT_ | while read line
       do
-         log_debug "${value}"
+         log_debug "${line}"
+      done
+      log_debug "The following SERVICE values were loaded:"
+      env | grep ^SERVICE_ | while read line
+      do
+         log_debug "${line}"
       done
       log_debug "The following TERRAFORM values were loaded:"
-      for value in `env | grep ^TERRAFORM_`
+      env | grep ^TERRAFORM_ | while read line
       do
-         log_debug "${value}"
+         log_debug "${line}"
       done
    fi
 }
@@ -200,7 +205,7 @@ do_check_variable_set() {
    # This function needs one argument:
    #    => $1 is the variable name
 
-   if [[ ${VERBOSE} == "TRUE" ]]; then
+   if [[ ${SCRIPT_VERBOSE,,} == "true" ]]; then
       log_debug "Checking for variable: ${1}"
    fi
    if [[ -z ${!1} ]]; then
@@ -221,7 +226,7 @@ do_check_variable_int() {
    # This function needs one argument:
    #    => $1 is the variable name
 
-   if [[ ${VERBOSE} == "TRUE" ]]; then
+   if [[ ${SCRIPT_VERBOSE,,} == "true" ]]; then
       log_debug "Checking that variable: ${1} is a positive integer"
    fi
 
@@ -270,13 +275,21 @@ do_sanity_checks() {
    fi
 
    # Check source directory exists
-   if [[ ${VERBOSE} == "TRUE" ]]; then
+   if [[ ${SCRIPT_VERBOSE,,} == "true" ]]; then
       log_debug "Checking that source directory: ${DIR_SOURCE} exists"
    fi
    if [[ ! -d ${DIR_SOURCE} ]]; then
       log_info 2 "*** FAILED *** The source directory ${DIR_SOURCE} does not exist"
       log_info 2 ""
       exit 1;
+   fi
+
+   # Is Terraform verbose enabled?
+   if [[ ${TERRAFORM_VERBOSE,,} == "true" ]]; then
+      if [[ ${SCRIPT_VERBOSE,,} == "true" ]]; then
+         log_debug "Terraform verbose mode enabled. Setting TF_LOG to DEBUG"
+      fi
+      export TF_LOG=DEBUG
    fi
 }
 
@@ -293,7 +306,7 @@ do_get_dependencies() {
 
    # Download dependencies
    cd ${DIR_SOURCE}
-   if [[ ${VERBOSE} == "TRUE" ]]; then
+   if [[ ${SCRIPT_VERBOSE,,} == "true" ]]; then
       log_debug ""
       go get ./... >> ${FILE_PATH_LOG} 2>&1
       RESULT=${?}
@@ -321,7 +334,7 @@ do_build() {
    log_info 1 "Performing build of source..."
 
    # Verbose logging
-   if [[ ${VERBOSE} == "TRUE" ]]; then
+   if [[ ${SCRIPT_VERBOSE,,} == "true" ]]; then
       log_debug "Found source files:"
       for FILE in `ls ${DIR_SOURCE}/*.go`
       do
@@ -338,36 +351,12 @@ do_build() {
    fi
 
    # Dump a copy?
-   if [[ ${SERVICE_ARTEFACTS_DUMP,,} == "true" ]]; then
+   if [[ ${SCRIPT_DUMP_ARTEFACTS,,} == "true" ]]; then
 
       # Copy the binary
       cp ${FILE_PATH_SERVICE_BINARY} ${DIR_WORK_OUT}
    fi
 }
-
-
-# ###
-# #
-# # Function to perform zip of binary
-# #
-# ###
-# do_zip() {
-
-#    # Log start
-#    log_info 1 "Creating zip"
-#    if [[ -d ${DIR_ZIP} ]]; then
-#       rm -rf ${DIR_ZIP}
-#    fi
-#    mkdir -p ${DIR_ZIP}
-
-#    # Zip the binary
-#    if [[ ${VERBOSE} == "TRUE" ]]; then
-#       zip -r9 ${FILE_SERVICE_ZIP} ${FILE_SERVICE_BINARY} 
-#       log_info 2 ""
-#    else
-#       zip -qr9 ${FILE_SERVICE_ZIP} ${FILE_SERVICE_BINARY} 
-#    fi
-# }
 
 
 ###
@@ -382,7 +371,7 @@ do_append_tfvar() {
    #    => $2 is log value
 
    # Verbose logging
-   if [[ ${VERBOSE} == "TRUE" ]]; then
+   if [[ ${SCRIPT_VERBOSE,,} == "true" ]]; then
       log_debug "Appending to TFVARS variable: ${1} with value: ${2}"
    fi
 
@@ -434,7 +423,7 @@ do_append_backend() {
    #    => $1 is the value to append
 
    # Verbose logging
-   if [[ ${VERBOSE} == "TRUE" ]]; then
+   if [[ ${SCRIPT_VERBOSE,,} == "true" ]]; then
       log_debug "Appending to backend file ${FILE_NAME_TF_BACKEND} the value: ${1}"
    fi
 
@@ -460,7 +449,9 @@ do_create_tf_backend() {
 
    # Remote or local backend?
    if [[ ${TERRAFORM_REMOTE_STATE,,} == "true" ]]; then
-      log_info 2 "Using remote AWS backend for terraform state..."
+      if [[ ${SCRIPT_VERBOSE,,} == "true" ]]; then
+         log_debug "Using remote AWS backend for terraform state..."
+      fi
       do_append_backend "terraform {" 
       do_append_backend "   backend \"s3\" {"  
       do_append_backend "      bucket = \"${TERRAFORM_STATE_S3_BUCKET_NAME}\""
@@ -471,7 +462,9 @@ do_create_tf_backend() {
       do_append_backend "   }" 
       do_append_backend "}" 
    else
-      log_info 2 "Using local backend for terraform state..."
+      if [[ ${SCRIPT_VERBOSE,,} == "true" ]]; then
+         log_debug "Using local backend for terraform state..."
+      fi
       do_append_backend "terraform {" 
       do_append_backend "   backend \"local\" {"  
       do_append_backend "   }" 
@@ -479,7 +472,7 @@ do_create_tf_backend() {
    fi
 
    # Dump a copy?
-   if [[ ${SERVICE_ARTEFACTS_DUMP,,} == "true" ]]; then
+   if [[ ${SCRIPT_DUMP_ARTEFACTS,,} == "true" ]]; then
 
       # Copy the terraform files
       cp ${DIR_TERRAFORM}/* ${DIR_WORK_OUT}
@@ -499,7 +492,7 @@ do_perform_tfinit() {
 
    # Run init
    cd ${DIR_TERRAFORM}
-   if [[ ${VERBOSE} == "TRUE" ]]; then
+   if [[ ${SCRIPT_VERBOSE,,} == "true" ]]; then
       log_debug ""
       terraform init >> ${FILE_PATH_LOG} 2>&1
       RESULT=${?}
@@ -528,7 +521,7 @@ do_perform_tfplan() {
 
    # Run plan
    cd ${DIR_TERRAFORM}
-   if [[ ${VERBOSE} == "TRUE" ]]; then
+   if [[ ${SCRIPT_VERBOSE,,} == "true" ]]; then
       log_debug ""
       terraform plan -input=false -out ${FILE_PATH_TF_PLAN_OUT} -var-file ${FILE_PATH_TFVARS} >> ${FILE_PATH_LOG} 2>&1
       RESULT=${?}
@@ -557,7 +550,7 @@ do_perform_tfapply() {
 
    # Run plan
    cd ${DIR_TERRAFORM}
-   if [[ ${VERBOSE} == "TRUE" ]]; then
+   if [[ ${SCRIPT_VERBOSE,,} == "true" ]]; then
       log_debug ""
       terraform apply -input=false -auto-approve ${FILE_PATH_TF_PLAN_OUT} >> ${FILE_PATH_LOG} 2>&1
       RESULT=${?}
@@ -581,16 +574,15 @@ do_perform_tfapply() {
 #
 #################################################
 export MODE="POST"
-export VERBOSE="FALSE"
+export SCRIPT_VERBOSE="FALSE"
 
 
 # Check that we received valid options
-options=':vh'
+options=':h'
 while getopts $options option
 do
    case ${option} in
       h  ) do_usage; exit 0 ;;
-      v  ) VERBOSE="TRUE";;
       \? ) echo ""; echo "ERROR: Unknown option: $OPTARG" 1>&2; exit 1;;
    esac
 done
@@ -632,7 +624,7 @@ if [[ ${MODE} != "DELETE" ]]; then
    do_perform_tfplan
 
    # Perform terraform apply
-   #do_perform_tfapply
+   do_perform_tfapply
 
 fi
 
