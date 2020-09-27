@@ -62,7 +62,7 @@ export SERVICE_ROLE_ACTION="use"
 ###
 # Service role name
 ###
-export SERVICE_ROLE_NAME="false"
+export SERVICE_ROLE_NAME="arn:aws:iam::12345:role/MyRole"
 
 
 ###
@@ -80,13 +80,19 @@ export SERVICE_REGION="us-west-2"
 ###
 # Run Mode
 ###
-#export SERVICE_DEPLOY_MODE="delete"
+#export SCRIPT_RUN_MODE="delete"
+
+
+###
+# Enable verbose logging
+###
+export SCRIPT_VERBOSE="false"
 
 
 ###
 # Dump artefacts
 ###
-export SERVICE_ARTEFACTS_DUMP="true"
+export SCRIPT_DUMP_ARTEFACTS="true"
 
 
 
@@ -120,3 +126,7 @@ export TERRAFORM_STATE_S3_REGION="us-west-2"
 ###
 export TERRAFORM_STATE_DYNAMODB_TABLE_NAME="tflocks"
 
+###
+# Enable Terraform verbose logging
+###
+export TERRAFORM_VERBOSE="false"
