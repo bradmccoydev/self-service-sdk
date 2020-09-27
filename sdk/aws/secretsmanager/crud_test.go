@@ -1,6 +1,7 @@
 package secretsmanager_test
 
 import (
+	"log"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -10,6 +11,12 @@ import (
 
 // Test CreateSecretKeyValue
 func TestCreateSecretKeyValue(t *testing.T) {
+
+	// Setup backend
+	deleteerr := DeleteTestSecretIfExists()
+	if deleteerr != nil {
+		log.Fatal(deleteerr)
+	}
 
 	// Setup key/values
 	type kv map[string]string
@@ -58,6 +65,12 @@ func TestCreateSecretKeyValue(t *testing.T) {
 // Test CreateSecretString
 func TestCreateSecretString(t *testing.T) {
 
+	// Setup backend
+	deleteerr := DeleteTestSecretIfExists()
+	if deleteerr != nil {
+		log.Fatal(deleteerr)
+	}
+
 	// Setup test data
 	tests := []struct {
 		desc       string
@@ -97,6 +110,12 @@ func TestCreateSecretString(t *testing.T) {
 // Test DeleteSecret
 func TestDeleteSecret(t *testing.T) {
 
+	// Setup backend
+	createerr := CreateTestSecretIfNotExists()
+	if createerr != nil {
+		log.Fatal(createerr)
+	}
+
 	// Setup test data
 	tests := []struct {
 		desc       string
@@ -122,7 +141,7 @@ func TestDeleteSecret(t *testing.T) {
 			} else {
 				sess = internal.CreateAwsSession(false)
 			}
-			err := secretsmanager.DeleteSecret(sess, test.secretName)
+			err := secretsmanager.DeleteSecret(sess, test.secretName, true)
 			if test.expectErr {
 				internal.HasError(t, err)
 			} else {
@@ -134,6 +153,12 @@ func TestDeleteSecret(t *testing.T) {
 
 // Test GetSecretKeyValue
 func TestGetSecretKeyValue(t *testing.T) {
+
+	// Setup backend
+	createerr := CreateTestSecretIfNotExists()
+	if createerr != nil {
+		log.Fatal(createerr)
+	}
 
 	// Setup test data
 	tests := []struct {
@@ -171,6 +196,12 @@ func TestGetSecretKeyValue(t *testing.T) {
 
 // Test GetSecretString
 func TestGetSecretString(t *testing.T) {
+
+	// Setup backend
+	createerr := CreateTestSecretIfNotExists()
+	if createerr != nil {
+		log.Fatal(createerr)
+	}
 
 	// Setup test data
 	tests := []struct {

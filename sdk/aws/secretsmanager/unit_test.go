@@ -23,10 +23,10 @@ func CreateTestSecretIfNotExists() error {
 	// If the secret doesn't exist then create it
 	sess := internal.CreateAwsSession(true)
 	exists, _ := secretsmanager.SecretExists(sess, TestSecretNameValid)
-	var err error
-	if exists == false {
-		err = secretsmanager.CreateSecretString(sess, TestSecretNameValid, TestSecretNameValid, "Something")
+	if exists {
+		return nil
 	}
+	err := secretsmanager.CreateSecretString(sess, TestSecretNameValid, TestSecretNameValid, "Something")
 	return err
 }
 
@@ -36,10 +36,10 @@ func DeleteTestSecretIfExists() error {
 	// If the secret exists then delete it
 	sess := internal.CreateAwsSession(true)
 	exists, _ := secretsmanager.SecretExists(sess, TestSecretNameValid)
-	var err error
-	if exists {
-		err = secretsmanager.DeleteSecret(sess, TestSecretNameValid)
+	if exists == false {
+		return nil
 	}
+	err := secretsmanager.DeleteSecret(sess, TestSecretNameValid, true)
 	return err
 }
 

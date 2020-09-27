@@ -1,6 +1,7 @@
 package secretsmanager_test
 
 import (
+	"log"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -11,6 +12,12 @@ import (
 // Test DescribeSecret
 func TestDescribeSecret(t *testing.T) {
 
+	// Setup backend
+	createerr := CreateTestSecretIfNotExists()
+	if createerr != nil {
+		log.Fatal(createerr)
+	}
+
 	// Setup test data
 	tests := []struct {
 		desc       string
@@ -20,7 +27,8 @@ func TestDescribeSecret(t *testing.T) {
 	}{
 		{"No session", false, "", true},
 		{"With session but no secret name", true, "", true},
-		{"With session and invalid secret name", true, "Fred", false},
+		{"With session and invalid secret name", true, TestSecretNameInvalid, true},
+		{"With session and valid secret name", true, TestSecretNameValid, false},
 	}
 
 	// Iterate through the test data

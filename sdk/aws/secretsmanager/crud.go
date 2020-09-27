@@ -6,6 +6,7 @@ package secretsmanager
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -46,6 +47,11 @@ func createSecret(sess *session.Session, secret secretDetails) error {
 
 	// Make the call to Secrets Manager
 	_, err := svc.CreateSecret(params)
+
+	// If ok, sleep for 5 seconds to allow time for processing
+	if err == nil {
+		time.Sleep(5 * time.Second)
+	}
 
 	// Return the result
 	return err
@@ -127,10 +133,11 @@ func CreateSecretString(sess *session.Session, name string, description string, 
 //   Parameters:
 //     sess: a valid AWS session
 //     secretName: the name of the secret to delete
+//     force: If true, force delete the scret immediately
 //
 //   Example:
 //     err := DeleteSecret(mySession, secretName)
-func DeleteSecret(sess *session.Session, secretName string) error {
+func DeleteSecret(sess *session.Session, secretName string, force bool) error {
 
 	// Sanity check
 	if secretName == "" {
@@ -139,7 +146,8 @@ func DeleteSecret(sess *session.Session, secretName string) error {
 
 	// Build the input params
 	params := &secretsmanager.DeleteSecretInput{
-		SecretId: aws.String(secretName),
+		SecretId:                   aws.String(secretName),
+		ForceDeleteWithoutRecovery: &force,
 	}
 
 	// Create the Secrets Manager client
@@ -147,6 +155,11 @@ func DeleteSecret(sess *session.Session, secretName string) error {
 
 	// Make the call to Secrets Manager
 	_, err := svc.DeleteSecret(params)
+
+	// If ok, sleep for 5 seconds to allow time for processing
+	if err == nil {
+		time.Sleep(5 * time.Second)
+	}
 
 	// Return the result
 	return err
