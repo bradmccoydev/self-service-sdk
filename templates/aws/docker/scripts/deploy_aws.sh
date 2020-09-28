@@ -23,7 +23,7 @@ export DIR_ZIP="${DIR_BASE}/zip"
 export FILE_NAME_LOG="deploy_aws.log"
 export FILE_NAME_SERVICE_BINARY="main"
 export FILE_NAME_SERVICE_ZIP="main.zip"
-export FILE_NAME_TF_BACKEND="backend.tf"
+export FILE_NAME_TF_MAIN="main.tf"
 export FILE_NAME_TF_PLAN_OUT="tfapply.out"
 export FILE_NAME_TFVARS="variables.tfvars"
 export FILE_NAME_USER_INPUTS="inputs.sh"
@@ -34,7 +34,7 @@ export FILE_NAME_USER_INPUTS="inputs.sh"
 export FILE_PATH_LOG="${DIR_WORK_LOG}/${FILE_NAME_LOG}"
 export FILE_PATH_SERVICE_BINARY="${DIR_BUILD}/${FILE_NAME_SERVICE_BINARY}"
 export FILE_PATH_SERVICE_ZIP="${DIR_ZIP}/${FILE_NAME_SERVICE_ZIP}"
-export FILE_PATH_TF_BACKEND="${DIR_TERRAFORM}/${FILE_NAME_TF_BACKEND}"
+export FILE_PATH_TF_MAIN="${DIR_TERRAFORM}/${FILE_NAME_TF_MAIN}"
 export FILE_PATH_TF_PLAN_OUT="${DIR_TERRAFORM}/${FILE_NAME_TF_PLAN_OUT}"
 export FILE_PATH_TFVARS="${DIR_TERRAFORM}/${FILE_NAME_TFVARS}"
 export FILE_PATH_USER_INPUTS="${DIR_WORK}/${FILE_NAME_USER_INPUTS}"
@@ -255,7 +255,6 @@ do_sanity_checks() {
    do_check_variable_set SERVICE_LOG_RETENTION
    do_check_variable_set SERVICE_MEMORY
    do_check_variable_set SERVICE_TIMEOUT
-   do_check_variable_set SERVICE_STORAGE
    do_check_variable_set SERVICE_REGION
    do_check_variable_set SERVICE_RUNTIME
    do_check_variable_set SERVICE_ROLE_ACTION
@@ -282,6 +281,40 @@ do_sanity_checks() {
       log_info 2 "*** FAILED *** The source directory ${DIR_SOURCE} does not exist"
       log_info 2 ""
       exit 1;
+   fi
+
+   # Service tags provided?
+   if [[  ! -z ${SERVICE_TAGS} ]]; then
+      if [[ ${SCRIPT_VERBOSE,,} == "true" ]]; then
+         log_debug "Checking service tags"
+      fi
+
+      # Split tag variable on comma into an array
+      IFS=',' read -ra tmp_array <<< ${SERVICE_TAGS}
+
+      # Check service tags are ok
+      for i in "${tmp_array[@]}"
+      do
+         if [[ ${SCRIPT_VERBOSE,,} == "true" ]]; then
+            log_debug "Tag: ${i}"
+         fi
+
+         # Split at the equals
+         IFS='=' read -ra kv_array <<< ${i}
+         key=$(echo ${i} | cut -f1 -d=)
+         val=$(echo ${i} | cut -f2 -d=)
+
+         if [[ -z ${key} ]]; then 
+            log_info 2 "*** FAILED *** An empty SERVICE_TAGS key was provided: ${SERVICE_TAGS}"
+            log_info 2 ""
+            exit 1;
+         fi
+         if [[ -z ${val} ]]; then 
+            log_info 2 "*** FAILED *** An empty SERVICE_TAGS value was provided: ${SERVICE_TAGS}"
+            log_info 2 ""
+            exit 1;
+         fi
+      done
    fi
 
    # Is Terraform verbose enabled?
@@ -364,7 +397,7 @@ do_build() {
 # Function to append an entry to tfvars
 #
 ###
-do_append_tfvar() {
+do_append_tfvar_basic() {
 
    # This function needs two arguments:
    #    => $1 is the key
@@ -377,6 +410,47 @@ do_append_tfvar() {
 
    # Ok, append it
    echo "${1} = \"${2}\"" >> ${FILE_PATH_TFVARS}
+}
+
+
+###
+#
+# Function to append a map entry to tfvars
+#
+###
+do_append_tfvar_map() {
+
+   # This function needs two arguments:
+   #    => $1 is tfvars variable name
+   #    => $2 is the comma delimited kv pairs
+
+   # Verbose logging
+   if [[ ${SCRIPT_VERBOSE,,} == "true" ]]; then
+      log_debug "Appending to TFVARS map variable: ${1}"
+   fi
+
+   # Split tag variable on comma into an array
+   IFS=',' read -ra tmp_array <<< ${2}
+
+   # Convert the keypairs to an associative array
+   declare -A kv_array
+   for i in "${tmp_array[@]}" 
+   do 
+      key=$(echo ${i} | cut -f1 -d=) 
+      val=$(echo ${i} | cut -f2 -d=) 
+      kv_array[${key}]=${val}
+   done 
+
+   # Convert the array to JSON
+   MAP_JSON=$(for i in "${!kv_array[@]}"; do echo "\"${i}\""; echo "\"${kv_array[${i}]}\""; done | jq -n 'reduce inputs as $i ({}; . + { ($i): input })')
+
+   # Verbose logging
+   if [[ ${SCRIPT_VERBOSE,,} == "true" ]]; then
+      log_debug "Appending to TFVARS variable: ${1} with value: ${MAP_JSON}"
+   fi
+
+   # Ok, append it
+   echo "${1} = ${MAP_JSON}" >> ${FILE_PATH_TFVARS}
 }
 
 
@@ -396,19 +470,26 @@ do_create_tfvars() {
    fi
 
    # Add the user variables
-   do_append_tfvar "service_name"          "${SERVICE_NAME}"
-   do_append_tfvar "service_desc"          "${SERVICE_DESC}"
-   do_append_tfvar "service_memory"        "${SERVICE_MEMORY}"
-   do_append_tfvar "service_timeout"       "${SERVICE_TIMEOUT}"
-   do_append_tfvar "service_runtime"       "${SERVICE_RUNTIME}"
-   do_append_tfvar "service_role"          "${SERVICE_ROLE_NAME}" 
-   do_append_tfvar "service_aws_region"    "${SERVICE_REGION}"
-   do_append_tfvar "service_log_retention" "${SERVICE_LOG_RETENTION}"
+   do_append_tfvar_basic "service_name"          "${SERVICE_NAME}"
+   do_append_tfvar_basic "service_desc"          "${SERVICE_DESC}"
+   do_append_tfvar_basic "service_memory"        "${SERVICE_MEMORY}"
+   do_append_tfvar_basic "service_timeout"       "${SERVICE_TIMEOUT}"
+   do_append_tfvar_basic "service_runtime"       "${SERVICE_RUNTIME}"
+   do_append_tfvar_basic "service_role"          "${SERVICE_ROLE_NAME}" 
+   do_append_tfvar_basic "service_aws_region"    "${SERVICE_REGION}"
+   do_append_tfvar_basic "service_log_retention" "${SERVICE_LOG_RETENTION}"
 
    # Add the other bits we need for the service
-   do_append_tfvar "service_handler"       "${AWS_LAMBDA_HANDLER}"
-   do_append_tfvar "service_zip_input"     "${DIR_BUILD}" 
-   do_append_tfvar "service_zip_output"    "${FILE_PATH_SERVICE_ZIP}"
+   do_append_tfvar_basic "service_handler"       "${AWS_LAMBDA_HANDLER}"
+   do_append_tfvar_basic "service_zip_input"     "${DIR_BUILD}" 
+   do_append_tfvar_basic "service_zip_output"    "${FILE_PATH_SERVICE_ZIP}"
+
+   # Add tags if required
+   if [[ ! -z ${SERVICE_TAGS} ]]; then
+      #tag_json=$(for i in "${!LAMBDA_TAGS[@]}"; do echo "\"${i}\""; echo "\"${LAMBDA_TAGS[$i]}\""; done | jq -n 'reduce inputs as $i ({}; . + { ($i): input })')
+      #do_append_tfvar_basic "service_tags"       "${tag_json}"
+      do_append_tfvar_map "service_tags"         "${SERVICE_TAGS}"
+   fi
 }
 
 
@@ -424,11 +505,11 @@ do_append_backend() {
 
    # Verbose logging
    if [[ ${SCRIPT_VERBOSE,,} == "true" ]]; then
-      log_debug "Appending to backend file ${FILE_NAME_TF_BACKEND} the value: ${1}"
+      log_debug "Appending to backend file ${FILE_NAME_TF_MAIN} the value: ${1}"
    fi
 
    # Ok, append it
-   echo "${1}" >> ${FILE_PATH_TF_BACKEND}
+   echo "${1}" >> ${FILE_PATH_TF_MAIN}
 }
 
 
@@ -440,12 +521,19 @@ do_append_backend() {
 do_create_tf_backend() {
 
    # Log start
-   log_info 1 "Creating ${FILE_NAME_TF_BACKEND} file..."
+   log_info 1 "Setting Terraform state handling..."
 
    # Delete file if it already exists
    if [[ -f ${FILE_PATH_TF_BACKEND} ]]; then
       rm -rf ${FILE_PATH_TF_BACKEND}
    fi
+
+   # Remote or local backend?
+   do_append_backend ""
+   do_append_backend ""
+   do_append_backend "###"
+   do_append_backend "# Terraform state management"
+   do_append_backend "###"
 
    # Remote or local backend?
    if [[ ${TERRAFORM_REMOTE_STATE,,} == "true" ]]; then

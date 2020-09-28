@@ -30,27 +30,21 @@ export SERVICE_TIMEOUT="30"
 
 
 ###
+# Service Cloudwatch log retention period (days)
+###
+export SERVICE_LOG_RETENTION="7"
+
+
+###
 # Service memory (MB in multiples of 64)
 ###
 export SERVICE_MEMORY="128"
 
 
 ###
-# Service storage
+# Service AWS Region
 ###
-export SERVICE_STORAGE="s3://my_s3_bucket/some/path"
-
-
-###
-# Service runtime
-###
-export SERVICE_RUNTIME="go1.x"
-
-
-###
-# Service Cloudwatch log retention period (days)
-###
-export SERVICE_LOG_RETENTION="7"
+export SERVICE_REGION="us-west-2"
 
 
 ###
@@ -66,9 +60,15 @@ export SERVICE_ROLE_NAME="arn:aws:iam::12345:role/MyRole"
 
 
 ###
-# Service AWS Region
+# Service runtime
 ###
-export SERVICE_REGION="us-west-2"
+export SERVICE_RUNTIME="go1.x"
+
+
+###
+# Service tags
+###
+#export SERVICE_TAGS="tagname1=123,tagname2=456"
 
 
 

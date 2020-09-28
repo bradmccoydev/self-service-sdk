@@ -4,17 +4,8 @@
 # 
 ##################################################################
 
-#------------------------------------------------------------
-# The following variables are for the lambda definition
-#
-
 variable "service_aws_region" {
   description = "AWS region"
-  type = string
-}
-
-variable "service_name" {
-  description = "Lambda service name"
   type = string
 }
 
@@ -28,8 +19,18 @@ variable "service_handler" {
   type = string
 }
 
-variable "service_runtime" {
-  description = "Lambda service runtime type"
+variable "service_log_retention" {
+  description = "Lambda service Cloudwatch log retention period"
+  type = number
+}
+
+variable "service_memory" {
+  description = "Lambda service memory limit"
+  type = number
+}
+
+variable "service_name" {
+  description = "Lambda service name"
   type = string
 }
 
@@ -38,18 +39,19 @@ variable "service_role" {
   type = string
 }
 
-variable "service_memory" {
-  description = "Lambda service memory limit"
-  type = number
+variable "service_runtime" {
+  description = "Lambda service runtime type"
+  type = string
+}
+
+variable "service_tags" {
+  description = "Lambda tags"
+  type = map
+  default = {}
 }
 
 variable "service_timeout" {
   description = "Lambda service timeout"
-  type = number
-}
-
-variable "service_log_retention" {
-  description = "Lambda service Cloudwatch log retention period"
   type = number
 }
 

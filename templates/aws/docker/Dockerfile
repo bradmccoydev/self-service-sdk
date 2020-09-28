@@ -1,27 +1,31 @@
-# Use the specified AWS Linux image
-FROM amazonlinux:2.0.20200722.0
+# Use the specified Debian image
+FROM debian:sid-slim
+
+
+# Build arguments
+ARG GO_VERS=1.15.1
+ARG TF_VERS=0.13.3
 
 
 # Install required os utilities
-RUN yum install -y gzip tar wget unzip zip
+RUN apt-get -qq update \
+ && apt-get -qq install curl jq unzip
 
 
 # Install GoLang
-ARG GO_VERS=1.15.1
 ARG GO_URL="https://dl.google.com/go/go${GO_VERS}.linux-amd64.tar.gz"
-RUN wget -O /tmp/go.tar.gz --quiet ${GO_URL} \
+RUN curl ${GO_URL} -o /tmp/go.tar.gz -s \
  && tar -C /usr/local -xzf /tmp/go.tar.gz 
 
 
-# Install Terraform
-ARG TF_VERS=0.13.3
-ARG TF_URL="https://releases.hashicorp.com/terraform/${TF_VERS}/terraform_${TF_VERS}_linux_amd64.zip"
-RUN wget -O /tmp/tf.zip --quiet ${TF_URL} \
- && unzip /tmp/tf.zip -d /usr/local/bin
-
-
-# Environment variables for the container
+# Update PATH to include GoLang
 ENV PATH ${PATH}:/usr/local/go/bin
+
+
+# Install Terraform
+ARG TF_URL="https://releases.hashicorp.com/terraform/${TF_VERS}/terraform_${TF_VERS}_linux_amd64.zip"
+RUN curl ${TF_URL} -o /tmp/tf.zip -s \
+ && unzip /tmp/tf.zip -d /usr/local/bin
 
 
 # Copy the required files

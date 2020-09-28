@@ -1,9 +1,3 @@
-##################################################################
-# 
-# Terraform script to manage creation/update of Lambda.
-# 
-##################################################################
-
 ###
 # AWS provider
 ###
@@ -35,6 +29,8 @@ resource "aws_lambda_function" "lambda_service" {
    timeout          = var.service_timeout
    filename         = data.archive_file.lambda_zip.output_path
    source_code_hash = data.archive_file.lambda_zip.output_base64sha256
+
+   tags             = var.service_tags
 }
 
 
