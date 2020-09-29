@@ -2,7 +2,7 @@
 # AWS provider
 ###
 provider "aws" {
-   region = var.service_aws_region
+   region = var.common_aws_region
 }
 
 
@@ -11,8 +11,8 @@ provider "aws" {
 ###
 data "archive_file" "lambda_zip" {
    type        = "zip"
-   source_dir  = var.service_zip_input
-   output_path = var.service_zip_output
+   source_dir  = var.lambda_source_zip_input
+   output_path = var.lambda_source_zip_output
 }
 
 
@@ -20,17 +20,23 @@ data "archive_file" "lambda_zip" {
 # Lambda definition
 ###
 resource "aws_lambda_function" "lambda_service" {
-   function_name    = var.service_name
-   description      = var.service_desc
-   role             = var.service_role
-   handler          = var.service_handler
-   runtime          = var.service_runtime
-   memory_size      = var.service_memory
-   timeout          = var.service_timeout
+   function_name    = var.lambda_function_name
+   description      = var.lambda_function_desc
+   role             = var.lambda_function_role
+   handler          = var.lambda_function_handler
+   runtime          = var.lambda_function_runtime
+   memory_size      = var.lambda_function_memory
+   timeout          = var.lambda_function_timeout
+   tags             = var.lambda_function_tags
    filename         = data.archive_file.lambda_zip.output_path
    source_code_hash = data.archive_file.lambda_zip.output_base64sha256
 
-   tags             = var.service_tags
+   dynamic "environment" {
+      for_each = length(keys(var.lambda_function_vars)) == 0 ? [] : [true]
+      content {
+         variables = var.lambda_function_vars
+      }
+   }
 }
 
 
@@ -39,5 +45,5 @@ resource "aws_lambda_function" "lambda_service" {
 ###
 resource "aws_cloudwatch_log_group" "lambda_service_logs" {
    name              = "/aws/lambda/${aws_lambda_function.lambda_service.function_name}"
-   retention_in_days = var.service_log_retention
+   retention_in_days = var.cloudwatch_log_retention
 }

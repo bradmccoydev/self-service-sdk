@@ -71,6 +71,12 @@ export SERVICE_RUNTIME="go1.x"
 #export SERVICE_TAGS="tagname1=123,tagname2=456"
 
 
+###
+# Service variables
+###
+#export SERVICE_VARS="var1=123,var2=456"
+
+
 
 #----------------------------------------------------------#
 # The follow variables control the behaviour of the 

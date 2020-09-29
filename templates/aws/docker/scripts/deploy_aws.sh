@@ -71,7 +71,6 @@ do_usage() {
    echo "already exist then it will be updated."
    echo ""
    echo "Options:"
-   echo "   -v      Verbose logging"
    echo "   -h      Displays this help and then exits"
    echo ""
 }
@@ -317,6 +316,41 @@ do_sanity_checks() {
       done
    fi
 
+
+   # Service variables provided?
+   if [[  ! -z ${SERVICE_VARS} ]]; then
+      if [[ ${SCRIPT_VERBOSE,,} == "true" ]]; then
+         log_debug "Checking service environment variables"
+      fi
+
+      # Split tag variable on comma into an array
+      IFS=',' read -ra tmp_array <<< ${SERVICE_VARS}
+
+      # Check service tags are ok
+      for i in "${tmp_array[@]}"
+      do
+         if [[ ${SCRIPT_VERBOSE,,} == "true" ]]; then
+            log_debug "Tag: ${i}"
+         fi
+
+         # Split at the equals
+         IFS='=' read -ra kv_array <<< ${i}
+         key=$(echo ${i} | cut -f1 -d=)
+         val=$(echo ${i} | cut -f2 -d=)
+
+         if [[ -z ${key} ]]; then 
+            log_info 2 "*** FAILED *** An empty SERVICE_TAGS key was provided: ${SERVICE_VARS}"
+            log_info 2 ""
+            exit 1;
+         fi
+         if [[ -z ${val} ]]; then 
+            log_info 2 "*** FAILED *** An empty SERVICE_TAGS value was provided: ${SERVICE_VARS}"
+            log_info 2 ""
+            exit 1;
+         fi
+      done
+   fi
+
    # Is Terraform verbose enabled?
    if [[ ${TERRAFORM_VERBOSE,,} == "true" ]]; then
       if [[ ${SCRIPT_VERBOSE,,} == "true" ]]; then
@@ -469,26 +503,27 @@ do_create_tfvars() {
       rm -rf ${FILE_PATH_TFVARS}
    fi
 
-   # Add the user variables
-   do_append_tfvar_basic "service_name"          "${SERVICE_NAME}"
-   do_append_tfvar_basic "service_desc"          "${SERVICE_DESC}"
-   do_append_tfvar_basic "service_memory"        "${SERVICE_MEMORY}"
-   do_append_tfvar_basic "service_timeout"       "${SERVICE_TIMEOUT}"
-   do_append_tfvar_basic "service_runtime"       "${SERVICE_RUNTIME}"
-   do_append_tfvar_basic "service_role"          "${SERVICE_ROLE_NAME}" 
-   do_append_tfvar_basic "service_aws_region"    "${SERVICE_REGION}"
-   do_append_tfvar_basic "service_log_retention" "${SERVICE_LOG_RETENTION}"
-
-   # Add the other bits we need for the service
-   do_append_tfvar_basic "service_handler"       "${AWS_LAMBDA_HANDLER}"
-   do_append_tfvar_basic "service_zip_input"     "${DIR_BUILD}" 
-   do_append_tfvar_basic "service_zip_output"    "${FILE_PATH_SERVICE_ZIP}"
+   # Add the variable assignments
+   do_append_tfvar_basic "cloudwatch_log_retention"  "${SERVICE_LOG_RETENTION}"
+   do_append_tfvar_basic "common_aws_region"         "${SERVICE_REGION}"
+   do_append_tfvar_basic "lambda_function_desc"      "${SERVICE_DESC}"
+   do_append_tfvar_basic "lambda_function_handler"   "${AWS_LAMBDA_HANDLER}"
+   do_append_tfvar_basic "lambda_function_memory"    "${SERVICE_MEMORY}"
+   do_append_tfvar_basic "lambda_function_name"      "${SERVICE_NAME}"
+   do_append_tfvar_basic "lambda_function_role"      "${SERVICE_ROLE_NAME}" 
+   do_append_tfvar_basic "lambda_function_runtime"   "${SERVICE_RUNTIME}"
+   do_append_tfvar_basic "lambda_function_timeout"   "${SERVICE_TIMEOUT}"
+   do_append_tfvar_basic "lambda_source_zip_input"   "${DIR_BUILD}" 
+   do_append_tfvar_basic "lambda_source_zip_output"  "${FILE_PATH_SERVICE_ZIP}"
 
    # Add tags if required
    if [[ ! -z ${SERVICE_TAGS} ]]; then
-      #tag_json=$(for i in "${!LAMBDA_TAGS[@]}"; do echo "\"${i}\""; echo "\"${LAMBDA_TAGS[$i]}\""; done | jq -n 'reduce inputs as $i ({}; . + { ($i): input })')
-      #do_append_tfvar_basic "service_tags"       "${tag_json}"
-      do_append_tfvar_map "service_tags"         "${SERVICE_TAGS}"
+      do_append_tfvar_map "lambda_function_tags"     "${SERVICE_TAGS}"
+   fi
+
+   # Add environment variables if required
+   if [[ ! -z ${SERVICE_VARS} ]]; then
+      do_append_tfvar_map "lambda_function_vars"     "${SERVICE_VARS}"
    fi
 }
 
@@ -582,11 +617,11 @@ do_perform_tfinit() {
    cd ${DIR_TERRAFORM}
    if [[ ${SCRIPT_VERBOSE,,} == "true" ]]; then
       log_debug ""
-      terraform init >> ${FILE_PATH_LOG} 2>&1
+      terraform init -no-color >> ${FILE_PATH_LOG} 2>&1
       RESULT=${?}
       log_debug ""
    else
-      terraform init > /dev/null
+      terraform init -no-color > /dev/null
       RESULT=${?}
    fi
    if [[ ${RESULT} -ne 0 ]]; then
@@ -611,11 +646,11 @@ do_perform_tfplan() {
    cd ${DIR_TERRAFORM}
    if [[ ${SCRIPT_VERBOSE,,} == "true" ]]; then
       log_debug ""
-      terraform plan -input=false -out ${FILE_PATH_TF_PLAN_OUT} -var-file ${FILE_PATH_TFVARS} >> ${FILE_PATH_LOG} 2>&1
+      terraform plan -input=false -no-color -out ${FILE_PATH_TF_PLAN_OUT} -var-file ${FILE_PATH_TFVARS} >> ${FILE_PATH_LOG} 2>&1
       RESULT=${?}
       log_debug ""
    else
-      terraform plan -input=false -out ${FILE_PATH_TF_PLAN_OUT} -var-file ${FILE_PATH_TFVARS} > /dev/null
+      terraform plan -input=false -no-color -out ${FILE_PATH_TF_PLAN_OUT} -var-file ${FILE_PATH_TFVARS} > /dev/null
       RESULT=${?}
    fi
    if [[ ${RESULT} -ne 0 ]]; then
@@ -640,11 +675,11 @@ do_perform_tfapply() {
    cd ${DIR_TERRAFORM}
    if [[ ${SCRIPT_VERBOSE,,} == "true" ]]; then
       log_debug ""
-      terraform apply -input=false -auto-approve ${FILE_PATH_TF_PLAN_OUT} >> ${FILE_PATH_LOG} 2>&1
+      terraform apply -input=false -no-color -auto-approve ${FILE_PATH_TF_PLAN_OUT} >> ${FILE_PATH_LOG} 2>&1
       RESULT=${?}
       log_debug ""
    else
-      terraform apply -input=false -auto-approve ${FILE_PATH_TF_PLAN_OUT} > /dev/null
+      terraform apply -input=false -no-color -auto-approve ${FILE_PATH_TF_PLAN_OUT} > /dev/null
       RESULT=${?}
    fi
    if [[ ${RESULT} -ne 0 ]]; then
